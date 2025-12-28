@@ -48,3 +48,11 @@ def is_completion_items(result: Any) -> TypeGuard[Iterable[lsp_type.CompletionIt
     return result is not None and all(
         isinstance(item, lsp_type.CompletionItem) for item in result
     )
+
+
+def is_code_actions(
+    result: Any,
+) -> TypeGuard[Iterable[lsp_type.Command | lsp_type.CodeAction]]:
+    return result is not None and all(
+        isinstance(item, (lsp_type.Command, lsp_type.CodeAction)) for item in result
+    )

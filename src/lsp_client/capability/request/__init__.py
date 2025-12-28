@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Final
 
 from .call_hierarchy import WithRequestCallHierarchy
+from .code_action import WithRequestCodeAction
 from .completion import WithRequestCompletion
 from .declaration import WithRequestDeclaration
 from .definition import WithRequestDefinition
@@ -20,6 +21,7 @@ from .workspace_symbol import WithRequestWorkspaceSymbol
 
 capabilities: Final = (
     WithRequestCallHierarchy,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDeclaration,
     WithRequestDefinition,
@@ -38,6 +40,7 @@ capabilities: Final = (
 
 __all__ = [
     "WithRequestCallHierarchy",
+    "WithRequestCodeAction",
     "WithRequestCompletion",
     "WithRequestDeclaration",
     "WithRequestDefinition",

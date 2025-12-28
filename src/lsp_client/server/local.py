@@ -19,7 +19,7 @@ from lsp_client.jsonrpc.types import RawPackage
 from lsp_client.utils.workspace import Workspace
 
 from .abc import Server
-from .exception import ServerRuntimeError
+from .error import ServerRuntimeError
 
 
 class EnsureInstalledProtocol(Protocol):

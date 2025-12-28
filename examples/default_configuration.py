@@ -92,7 +92,8 @@ def example_inspecting_defaults():
         if config_map and config_map.has_global_config():
             print(f"✓ {client_cls.__name__} has default configuration")
 
-            # Try to find inlay hints config
+            # Try to find configuration - inlay hints for most clients,
+            # or other features like diagnostics for clients without inlay hints
             for section in [
                 "rust-analyzer.inlayHints",
                 "gopls.hints",
@@ -100,6 +101,7 @@ def example_inspecting_defaults():
                 "typescript.inlayHints",
                 "deno.inlayHints",
                 "pyrefly.inlayHints",
+                "ty.diagnostics",  # TyClient uses diagnostics instead of inlay hints
             ]:
                 value = config_map.get(None, section)
                 if value is not None:

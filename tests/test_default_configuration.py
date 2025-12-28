@@ -145,3 +145,30 @@ def test_deno_default_config_has_inlay_hints():
     assert config_map is not None
     config = config_map.get(None, "deno.inlayHints")
     assert config is not None, "deno should have inlay hints configuration"
+
+
+def test_pyrefly_default_config_has_inlay_hints():
+    """Test that pyrefly default config enables inlay hints."""
+    from lsp_client.clients.pyrefly import PyreflyClient
+
+    client = PyreflyClient()
+    config_map = client.create_default_configuration_map()
+
+    assert config_map is not None
+    config = config_map.get(None, "pyrefly.inlayHints")
+    assert config is not None, "pyrefly should have inlay hints configuration"
+    assert isinstance(config, dict), "pyrefly inlay hints should be a dict"
+
+
+def test_ty_default_config_has_diagnostics():
+    """Test that ty default config enables diagnostics and completion."""
+    from lsp_client.clients.ty import TyClient
+
+    client = TyClient()
+    config_map = client.create_default_configuration_map()
+
+    assert config_map is not None
+    diagnostics = config_map.get(None, "ty.diagnostics")
+    assert diagnostics is not None, "ty should have diagnostics configuration"
+    completion = config_map.get(None, "ty.completion")
+    assert completion is not None, "ty should have completion configuration"

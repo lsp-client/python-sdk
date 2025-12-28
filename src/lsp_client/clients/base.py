@@ -10,7 +10,8 @@ from lsp_client.utils.types import lsp_type
 
 class PythonClientBase(Client, ABC):
     @override
-    def get_language_config(self) -> LanguageConfig:
+    @classmethod
+    def get_language_config(cls) -> LanguageConfig:
         return LanguageConfig(
             kind=lsp_type.LanguageKind.Python,
             suffixes=[".py", ".pyi"],
@@ -26,7 +27,8 @@ class PythonClientBase(Client, ABC):
 
 class RustClientBase(Client, ABC):
     @override
-    def get_language_config(self) -> LanguageConfig:
+    @classmethod
+    def get_language_config(cls) -> LanguageConfig:
         return LanguageConfig(
             kind=lsp_type.LanguageKind.Rust,
             suffixes=[".rs"],
@@ -36,7 +38,8 @@ class RustClientBase(Client, ABC):
 
 class GoClientBase(Client, ABC):
     @override
-    def get_language_config(self) -> LanguageConfig:
+    @classmethod
+    def get_language_config(cls) -> LanguageConfig:
         return LanguageConfig(
             kind=lsp_type.LanguageKind.Go,
             suffixes=[".go"],
@@ -46,7 +49,8 @@ class GoClientBase(Client, ABC):
 
 class TypeScriptClientBase(Client, ABC):
     @override
-    def get_language_config(self) -> LanguageConfig:
+    @classmethod
+    def get_language_config(cls) -> LanguageConfig:
         return LanguageConfig(
             kind=lsp_type.LanguageKind.TypeScript,
             suffixes=[".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],

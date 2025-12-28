@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 import anyio
 
+from lsp_client.utils.config import ConfigurationMap
 from lsp_client.utils.types import AnyPath, Notification, Request, Response
 from lsp_client.utils.uri import from_local_uri
 from lsp_client.utils.workspace import DEFAULT_WORKSPACE_DIR, Workspace
@@ -27,7 +28,12 @@ class CapabilityClientProtocol(Protocol):
         """The workspace folders of the client."""
 
     @abstractmethod
-    def get_language_config(self) -> LanguageConfig:
+    def get_config_map(self) -> ConfigurationMap:
+        """Get the configuration map of the client."""
+
+    @classmethod
+    @abstractmethod
+    def get_language_config(cls) -> LanguageConfig:
         """Get language-specific configuration for this client."""
 
     @abstractmethod

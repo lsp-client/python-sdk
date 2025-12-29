@@ -1,10 +1,16 @@
+"""LSP client protocol defining the minimal interface for LSP operations.
+
+Provides the CapabilityClientProtocol that defines required methods for
+workspace management, configuration access, file operations, and LSP message handling.
+"""
+
 from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import anyio
 
@@ -13,8 +19,7 @@ from lsp_client.utils.types import AnyPath, Notification, Request, Response
 from lsp_client.utils.uri import from_local_uri
 from lsp_client.utils.workspace import DEFAULT_WORKSPACE_DIR, Workspace
 
-if TYPE_CHECKING:
-    from lsp_client.client.lang import LanguageConfig
+from .lang import LanguageConfig
 
 
 @runtime_checkable

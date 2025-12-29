@@ -3,18 +3,20 @@ from __future__ import annotations
 import platform
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import final, override
+from typing import Self, final, override
 
 import anyio
 import tenacity
 from anyio.abc import ByteStream, IPAddressType
-from anyio.streams.buffered import BufferedByteReceiveStream
+from anyio.streams.buffered import BufferedByteStream
 from attrs import define, field
 from loguru import logger
 
 from lsp_client.jsonrpc.parse import read_raw_package, write_raw_package
 from lsp_client.jsonrpc.types import RawPackage
 from lsp_client.server.error import ServerRuntimeError
+from lsp_client.server.types import ServerRequest
+from lsp_client.utils.channel import Sender
 from lsp_client.utils.types import AnyPath
 from lsp_client.utils.workspace import Workspace
 
@@ -37,8 +39,7 @@ class SocketServer(Server):
     timeout: float = 10.0
     """Timeout for connecting to the socket."""
 
-    _stream: ByteStream = field(init=False)
-    _buffered: BufferedByteReceiveStream = field(init=False)
+    _stream: BufferedByteStream = field(init=False)
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(10),
@@ -68,16 +69,12 @@ class SocketServer(Server):
 
     @override
     async def send(self, package: RawPackage) -> None:
-        if self._stream is None:
-            raise ServerRuntimeError(self, "SocketServer is not running")
         await write_raw_package(self._stream, package)
 
     @override
     async def receive(self) -> RawPackage | None:
-        if self._buffered is None:
-            raise ServerRuntimeError(self, "SocketServer is not running")
         try:
-            return await read_raw_package(self._buffered)
+            return await read_raw_package(self._stream)
         except (anyio.EndOfStream, anyio.IncompleteRead, anyio.ClosedResourceError):
             logger.debug("Socket closed")
             return
@@ -88,13 +85,13 @@ class SocketServer(Server):
 
     @override
     @asynccontextmanager
-    async def run_process(self, workspace: Workspace) -> AsyncGenerator[None]:
-        await self.check_availability()
+    async def run(
+        self,
+        workspace: Workspace,
+        *,
+        sender: Sender[ServerRequest] | None = None,
+    ) -> AsyncGenerator[Self]:
+        self._stream = BufferedByteStream(await self.connect())
 
-        stream: ByteStream = await self.connect()
-
-        self._stream = stream
-        self._buffered = BufferedByteReceiveStream(stream)
-
-        async with stream:
-            yield
+        async with self._stream:
+            yield self

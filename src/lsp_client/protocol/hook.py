@@ -1,3 +1,9 @@
+"""Server request and notification hook system for LSP client.
+
+Defines hooks for handling server-initiated requests and notifications,
+with a registry for managing and dispatching these hooks.
+"""
+
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable

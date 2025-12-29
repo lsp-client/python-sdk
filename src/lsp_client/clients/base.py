@@ -4,7 +4,7 @@ from abc import ABC
 from typing import override
 
 from lsp_client.client.abc import Client
-from lsp_client.client.lang import LanguageConfig
+from lsp_client.protocol.lang import LanguageConfig
 from lsp_client.utils.types import lsp_type
 
 

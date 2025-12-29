@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, Sequence
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Self
 
 import asyncer
-from attrs import Factory, define, field
+from attrs import define, field
 from loguru import logger
 
 from lsp_client.jsonrpc.channel import ResponseTable, response_channel
@@ -23,7 +23,7 @@ from lsp_client.utils.workspace import Workspace
 
 @define(kw_only=True)
 class Server(ABC):
-    args: Sequence[str] = Factory(list)
+    """Base server implementation with JSON-RPC protocol handling."""
 
     _resp_table: ResponseTable = field(factory=ResponseTable, init=False)
 
@@ -42,11 +42,6 @@ class Server(ABC):
     @abstractmethod
     async def kill(self) -> None:
         """Kill the runtime process."""
-
-    @abstractmethod
-    @asynccontextmanager
-    def run_process(self, workspace: Workspace) -> AsyncGenerator[None]:
-        """Run the server process."""
 
     async def _dispatch(self, sender: Sender[ServerRequest] | None) -> None:
         if not sender:
@@ -85,16 +80,12 @@ class Server(ABC):
     async def notify(self, notification: RawNotification) -> None:
         await self.send(notification)
 
+    @abstractmethod
     @asynccontextmanager
-    async def run(
+    def run(
         self,
         workspace: Workspace,
         *,
         sender: Sender[ServerRequest] | None = None,
     ) -> AsyncGenerator[Self]:
-        async with (
-            self.run_process(workspace),
-            asyncer.create_task_group() as tg,
-        ):
-            tg.soonify(self._dispatch)(sender)
-            yield self
+        """Run the server."""

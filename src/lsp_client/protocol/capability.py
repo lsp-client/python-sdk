@@ -1,3 +1,10 @@
+"""LSP capability protocols defining client-side capability registration.
+
+Provides protocol interfaces for different LSP capability categories:
+workspace, text document, notebook, window, general, and experimental capabilities.
+Each protocol defines methods for registering client capabilities with the server.
+"""
+
 from __future__ import annotations
 
 from abc import abstractmethod

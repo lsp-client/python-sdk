@@ -1,3 +1,9 @@
+"""Language-specific configuration for LSP clients.
+
+Provides LanguageConfig for defining language properties including file suffixes,
+project markers, and project root detection logic.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

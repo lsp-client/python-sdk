@@ -4,13 +4,15 @@ import subprocess
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Literal, final, override
+from typing import Literal, Self, final, override
 
 import anyio
 from attrs import Factory, define, field
 from loguru import logger
 
 from lsp_client.jsonrpc.parse import RawPackage
+from lsp_client.server.types import ServerRequest
+from lsp_client.utils.channel import Sender
 from lsp_client.utils.workspace import Workspace
 
 from .abc import Server
@@ -207,12 +209,17 @@ class ContainerServer(Server):
                 "could not be pulled."
             ) from e
 
-    @override
     @asynccontextmanager
-    async def run_process(self, workspace: Workspace) -> AsyncGenerator[None]:
+    async def run(
+        self,
+        workspace: Workspace,
+        *,
+        sender: Sender[ServerRequest] | None = None,
+    ) -> AsyncGenerator[Self]:
         args = self.format_args(workspace)
         logger.debug("Running docker runtime with command: {}", args)
 
         self._local = LocalServer(program=self.backend, args=args)
-        async with self._local.run_process(workspace):
-            yield
+
+        async with self._local.run(workspace, sender=sender):
+            yield self

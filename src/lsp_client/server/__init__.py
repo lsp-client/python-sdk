@@ -6,6 +6,7 @@ from .default import DefaultServers
 from .error import ServerError, ServerInstallationError, ServerRuntimeError
 from .local import LocalServer
 from .socket import SocketServer
+from .types import ServerType
 
 __all__ = [
     "ContainerServer",
@@ -15,5 +16,6 @@ __all__ = [
     "ServerError",
     "ServerInstallationError",
     "ServerRuntimeError",
+    "ServerType",
     "SocketServer",
 ]

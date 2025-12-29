@@ -4,10 +4,11 @@ from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from functools import cached_property
 from pathlib import Path
-from typing import Protocol, final, override
+from typing import Protocol, Self, final, override
 
 import aioshutil
 import anyio
+import asyncer
 from anyio.abc import AnyByteSendStream, Process
 from anyio.streams.buffered import BufferedByteReceiveStream
 from attrs import Factory, define, field
@@ -16,6 +17,8 @@ from loguru import logger
 from lsp_client.env import disable_auto_installation
 from lsp_client.jsonrpc.parse import read_raw_package, write_raw_package
 from lsp_client.jsonrpc.types import RawPackage
+from lsp_client.server.types import ServerRequest
+from lsp_client.utils.channel import Sender
 from lsp_client.utils.workspace import Workspace
 
 from .abc import Server
@@ -87,7 +90,6 @@ class LocalServer(Server):
                 self, f"Program '{self.program}' not found in PATH."
             )
 
-    @override
     @asynccontextmanager
     async def run_process(self, workspace: Workspace) -> AsyncGenerator[None]:
         try:
@@ -125,3 +127,17 @@ class LocalServer(Server):
             except (TimeoutError, OSError):
                 logger.warning("Process shutdown failed, killing process")
                 await self.kill()
+
+    @asynccontextmanager
+    async def run(
+        self,
+        workspace: Workspace,
+        *,
+        sender: Sender[ServerRequest] | None = None,
+    ) -> AsyncGenerator[Self]:
+        async with (
+            self.run_process(workspace),
+            asyncer.create_task_group() as tg,
+        ):
+            tg.soonify(self._dispatch)(sender)
+            yield self

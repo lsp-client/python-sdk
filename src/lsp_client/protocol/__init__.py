@@ -1,3 +1,9 @@
+"""LSP protocol abstractions and type definitions.
+
+This module defines the protocol interfaces for LSP client capabilities,
+server request/notification hooks, and client operations.
+"""
+
 from __future__ import annotations
 
 from .capability import (

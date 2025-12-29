@@ -35,7 +35,6 @@ class WithRequestInlayHint(
         cls, cap: lsp_type.TextDocumentClientCapabilities
     ) -> None:
         cap.inlay_hint = lsp_type.InlayHintClientCapabilities(
-            dynamic_registration=True,
             resolve_support=lsp_type.ClientInlayHintResolveOptions(
                 properties=[
                     "tooltip",

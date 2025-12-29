@@ -14,6 +14,7 @@ from lsp_client.capability.notification import (
 )
 from lsp_client.capability.request import (
     WithRequestCallHierarchy,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDeclaration,
     WithRequestDefinition,
@@ -78,6 +79,7 @@ class PyrightClient(
     PythonClientBase,
     WithNotifyDidChangeConfiguration,
     WithRequestCallHierarchy,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDeclaration,
     WithRequestDefinition,

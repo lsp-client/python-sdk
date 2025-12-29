@@ -13,6 +13,7 @@ from lsp_client.capability.notification import (
     WithNotifyDidChangeConfiguration,
 )
 from lsp_client.capability.request import (
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDefinition,
     WithRequestDocumentSymbol,
@@ -83,6 +84,7 @@ TypescriptLocalServer = partial(
 class TypescriptClient(
     TypeScriptClientBase,
     WithNotifyDidChangeConfiguration,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestHover,
     WithRequestDefinition,

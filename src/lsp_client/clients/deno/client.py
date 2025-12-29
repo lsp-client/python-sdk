@@ -13,14 +13,15 @@ from lsp_client.capability.notification import (
     WithNotifyDidChangeConfiguration,
 )
 from lsp_client.capability.request import (
+    WithDocumentDiagnostic,
     WithRequestCallHierarchy,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDefinition,
     WithRequestDocumentSymbol,
     WithRequestHover,
     WithRequestImplementation,
     WithRequestInlayHint,
-    WithRequestPullDiagnostic,
     WithRequestReferences,
     WithRequestSignatureHelp,
     WithRequestTypeDefinition,
@@ -96,6 +97,7 @@ DenoLocalServer = partial(
 class DenoClient(
     Client,
     WithNotifyDidChangeConfiguration,
+    WithRequestCodeAction,
     WithRequestHover,
     WithRequestCompletion,
     WithRequestDefinition,
@@ -105,7 +107,7 @@ class DenoClient(
     WithRequestCallHierarchy,
     WithRequestDocumentSymbol,
     WithRequestInlayHint,
-    WithRequestPullDiagnostic,
+    WithDocumentDiagnostic,
     WithRequestSignatureHelp,
     WithRequestWorkspaceSymbol,
     WithReceiveLogMessage,

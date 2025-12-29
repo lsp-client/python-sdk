@@ -5,6 +5,7 @@
 - Lint & format: `ruff check --fix && ruff format`
 - Type checking: `ty check <dir_or_file>`
 - Run tests: `uv run pytest`
+- Python: always use `uv`
 
 ## Code Style Guidelines
 

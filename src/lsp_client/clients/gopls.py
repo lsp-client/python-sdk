@@ -12,6 +12,7 @@ from loguru import logger
 from lsp_client.capability.notification import WithNotifyDidChangeConfiguration
 from lsp_client.capability.request import (
     WithRequestCallHierarchy,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDefinition,
     WithRequestDocumentSymbol,
@@ -76,6 +77,7 @@ class GoplsClient(
     GoClientBase,
     WithNotifyDidChangeConfiguration,
     WithRequestCallHierarchy,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDefinition,
     WithRequestDocumentSymbol,

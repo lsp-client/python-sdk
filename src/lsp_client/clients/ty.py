@@ -14,17 +14,19 @@ from lsp_client.capability.notification import (
     WithNotifyDidChangeConfiguration,
 )
 from lsp_client.capability.request import (
+    WithDocumentDiagnostic,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDeclaration,
     WithRequestDefinition,
     WithRequestDocumentSymbol,
     WithRequestHover,
     WithRequestInlayHint,
-    WithRequestPullDiagnostic,
     WithRequestReferences,
     WithRequestSignatureHelp,
     WithRequestTypeDefinition,
     WithRequestWorkspaceSymbol,
+    WithWorkspaceDiagnostic,
 )
 from lsp_client.capability.server_notification import (
     WithReceiveLogMessage,
@@ -77,16 +79,18 @@ TyLocalServer = partial(
 class TyClient(
     PythonClientBase,
     WithNotifyDidChangeConfiguration,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDeclaration,
     WithRequestDefinition,
     WithRequestDocumentSymbol,
     WithRequestHover,
     WithRequestInlayHint,
-    WithRequestPullDiagnostic,
+    WithDocumentDiagnostic,
     WithRequestReferences,
     WithRequestSignatureHelp,
     WithRequestTypeDefinition,
+    WithWorkspaceDiagnostic,
     WithRequestWorkspaceSymbol,
     WithReceiveLogMessage,
     WithReceiveLogTrace,
@@ -122,4 +126,9 @@ class TyClient(
         """
         https://docs.astral.sh/ty/reference/editor-settings/
         """
-        return {"ty": {}}
+        return {
+            "ty": {
+                "diagnostics": True,
+                "completion": True,
+            }
+        }

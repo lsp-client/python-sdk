@@ -13,7 +13,9 @@ from lsp_client.capability.notification import (
     WithNotifyDidChangeConfiguration,
 )
 from lsp_client.capability.request import (
+    WithDocumentDiagnostic,
     WithRequestCallHierarchy,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDeclaration,
     WithRequestDefinition,
@@ -21,7 +23,6 @@ from lsp_client.capability.request import (
     WithRequestHover,
     WithRequestImplementation,
     WithRequestInlayHint,
-    WithRequestPullDiagnostic,
     WithRequestReferences,
     WithRequestSignatureHelp,
     WithRequestTypeDefinition,
@@ -80,6 +81,7 @@ class RustAnalyzerClient(
     RustClientBase,
     WithNotifyDidChangeConfiguration,
     WithRequestCallHierarchy,
+    WithRequestCodeAction,
     WithRequestCompletion,
     WithRequestDeclaration,
     WithRequestDefinition,
@@ -87,7 +89,7 @@ class RustAnalyzerClient(
     WithRequestHover,
     WithRequestImplementation,
     WithRequestInlayHint,
-    WithRequestPullDiagnostic,
+    WithDocumentDiagnostic,
     WithRequestReferences,
     WithRequestSignatureHelp,
     WithRequestTypeDefinition,
@@ -149,6 +151,7 @@ class RustAnalyzerClient(
                     }
                 },
                 "inlayHints": {
+                    "enable": True,
                     "bindingModeHints": {"enable": True},
                     "closureCaptureHints": {"enable": True},
                     "chainingHints": {"enable": True},

@@ -6,15 +6,12 @@ from typing import Protocol, override, runtime_checkable
 from loguru import logger
 
 from lsp_client.jsonrpc.id import jsonrpc_uuid
-from lsp_client.protocol import (
-    CapabilityClientProtocol,
-    TextDocumentCapabilityProtocol,
-)
+from lsp_client.protocol import CapabilityClientProtocol, TextDocumentCapabilityProtocol
 from lsp_client.utils.types import AnyPath, lsp_type
 
 
 @runtime_checkable
-class WithRequestPullDiagnostic(
+class WithDocumentDiagnostic(
     TextDocumentCapabilityProtocol,
     CapabilityClientProtocol,
     Protocol,
@@ -27,7 +24,7 @@ class WithRequestPullDiagnostic(
     @classmethod
     def iter_methods(cls) -> Iterator[str]:
         yield from super().iter_methods()
-        yield from (lsp_type.TEXT_DOCUMENT_DIAGNOSTIC,)
+        yield lsp_type.TEXT_DOCUMENT_DIAGNOSTIC
 
     @override
     @classmethod
@@ -36,7 +33,6 @@ class WithRequestPullDiagnostic(
     ) -> None:
         super().register_text_document_capability(cap)
         cap.diagnostic = lsp_type.DiagnosticClientCapabilities(
-            dynamic_registration=True,
             related_document_support=True,
             related_information=True,
             tag_support=lsp_type.ClientDiagnosticsTagOptions(

@@ -29,9 +29,7 @@ class WithRequestInlineValue(
     def register_text_document_capability(
         cls, cap: lsp_type.TextDocumentClientCapabilities
     ) -> None:
-        cap.inline_value = lsp_type.InlineValueClientCapabilities(
-            dynamic_registration=True
-        )
+        cap.inline_value = lsp_type.InlineValueClientCapabilities()
 
     @override
     @classmethod

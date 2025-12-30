@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import sys
 from functools import partial
 from subprocess import CalledProcessError
 from typing import Any, override
@@ -53,45 +54,24 @@ async def ensure_basedpyright_installed() -> None:
     if shutil.which("basedpyright-langserver"):
         return
 
-    # Try uv tool install
-    if shutil.which("uv"):
-        logger.info("Attempting to install basedpyright via uv tool install...")
-        try:
-            await anyio.run_process(["uv", "tool", "install", "basedpyright"])
-            logger.info("Successfully installed basedpyright via uv")
-            return
-        except CalledProcessError:
-            logger.warning(
-                "Failed to install basedpyright via uv, trying other methods..."
-            )
+    installers = [
+        (["uv", "tool", "install", "basedpyright"], "uv"),
+        (["npm", "install", "-g", "basedpyright"], "npm"),
+        ([sys.executable, "-m", "pip", "install", "basedpyright"], "pip"),
+    ]
 
-    # Try npm
-    if shutil.which("npm"):
-        logger.info("Attempting to install basedpyright via npm...")
-        try:
-            await anyio.run_process(["npm", "install", "-g", "basedpyright"])
-            logger.info("Successfully installed basedpyright via npm")
-            return
-        except CalledProcessError:
-            logger.warning(
-                "Failed to install basedpyright via npm, trying other methods..."
-            )
+    for cmd, name in installers:
+        if shutil.which(cmd[0]):
+            try:
+                logger.info("Attempting to install basedpyright via {}...", name)
+                await anyio.run_process(cmd)
+                return
+            except CalledProcessError:
+                continue
 
-    # Try pip
-    import sys
-
-    logger.info("Attempting to install basedpyright via pip...")
-    try:
-        await anyio.run_process(
-            [sys.executable, "-m", "pip", "install", "basedpyright"]
-        )
-        logger.info("Successfully installed basedpyright via pip")
-        return
-    except CalledProcessError as e:
-        raise ServerInstallationError(
-            "Could not install basedpyright-langserver. Please install it manually with 'uv tool install basedpyright', 'npm install -g basedpyright' or 'pip install basedpyright'. "
-            "See https://github.com/detachhead/basedpyright for more information."
-        ) from e
+    raise ServerInstallationError(
+        "Could not install basedpyright. Please install it manually with 'uv tool install basedpyright', 'npm install -g basedpyright' or 'pip install basedpyright'."
+    )
 
 
 BasedpyrightLocalServer = partial(

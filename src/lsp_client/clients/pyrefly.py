@@ -114,8 +114,9 @@ class PyreflyClient(
     - VSCode Extension: https://github.com/facebook/pyrefly/tree/main/lsp
     """
 
+    @classmethod
     @override
-    def create_default_servers(self) -> DefaultServers:
+    def create_default_servers(cls) -> DefaultServers:
         return DefaultServers(
             local=PyreflyLocalServer(),
             container=PyreflyContainerServer(),

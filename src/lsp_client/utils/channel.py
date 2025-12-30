@@ -59,13 +59,17 @@ class OneShotTable[T]:
         self._pending[id].send(data)
         self._pending.pop(id)
 
-    async def receive(self, id: Hashable) -> T:
+    def reserve(self, id: Hashable) -> OneShotReceiver[T]:
         if id in self._pending:
             raise ValueError(f"Sender with id {id} already registered")
 
         tx, rx = oneshot_channel.create()
+        self._pending[id] = tx
+        return rx
+
+    async def receive(self, id: Hashable) -> T:
+        rx = self.reserve(id)
         try:
-            self._pending[id] = tx
             return await rx.receive()
         finally:
             self._pending.pop(id, None)

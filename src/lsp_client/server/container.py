@@ -211,6 +211,7 @@ class ContainerServer(Server):
 
         return args
 
+    @override
     @asynccontextmanager
     async def run(
         self, workspace: Workspace, sender: Sender[ServerRequest]
@@ -220,5 +221,8 @@ class ContainerServer(Server):
 
         self._local = LocalServer(program=self.backend, args=args)
 
-        async with self._local.run(workspace, sender=sender):
+        async with (
+            self._local.run_process(workspace),
+            super().run(workspace, sender=sender),
+        ):
             yield self

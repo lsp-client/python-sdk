@@ -107,8 +107,9 @@ class GoplsClient(
     - VSCode Extension: https://marketplace.visualstudio.com/items?itemName=golang.go
     """
 
+    @classmethod
     @override
-    def create_default_servers(self) -> DefaultServers:
+    def create_default_servers(cls) -> DefaultServers:
         return DefaultServers(
             local=GoplsLocalServer(),
             container=GoplsContainerServer(),

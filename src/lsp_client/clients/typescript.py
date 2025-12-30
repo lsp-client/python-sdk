@@ -113,8 +113,9 @@ class TypescriptClient(
     - VSCode Extension: Built-in TypeScript support in VS Code
     """
 
+    @classmethod
     @override
-    def create_default_servers(self) -> DefaultServers:
+    def create_default_servers(cls) -> DefaultServers:
         return DefaultServers(
             local=TypescriptLocalServer(),
             container=TypescriptContainerServer(),

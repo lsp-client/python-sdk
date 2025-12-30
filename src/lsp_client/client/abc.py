@@ -123,6 +123,7 @@ class Client(
         return self._server
 
     @classmethod
+    @classmethod
     @abstractmethod
     def create_default_servers(cls) -> DefaultServers:
         """Create default servers for this client."""

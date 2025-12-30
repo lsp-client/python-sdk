@@ -110,8 +110,9 @@ class TyClient(
     - VSCode Extension: https://docs.astral.sh/ty/editors/vscode/
     """
 
+    @classmethod
     @override
-    def create_default_servers(self) -> DefaultServers:
+    def create_default_servers(cls) -> DefaultServers:
         return DefaultServers(
             local=TyLocalServer(),
             container=TyContainerServer(),

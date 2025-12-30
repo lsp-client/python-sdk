@@ -93,8 +93,9 @@ class Server(ABC):
                 tg.soonify(self._handle_package)(sender, package)
 
     async def request(self, request: RawRequest) -> RawResponsePackage:
+        rx = self._resp_table.reserve(request["id"])
         await self.send(request)
-        return await self._resp_table.receive(request["id"])
+        return await rx.receive()
 
     async def notify(self, notification: RawNotification) -> None:
         await self.send(notification)

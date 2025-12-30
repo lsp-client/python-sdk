@@ -107,8 +107,9 @@ class PyrightClient(
     - VSCode Extension: https://github.com/microsoft/pyright/tree/main/packages/vscode-pyright
     """
 
+    @classmethod
     @override
-    def create_default_servers(self) -> DefaultServers:
+    def create_default_servers(cls) -> DefaultServers:
         return DefaultServers(
             local=PyrightLocalServer(),
             container=PyrightContainerServer(),

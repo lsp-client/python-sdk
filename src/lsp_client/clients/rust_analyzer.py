@@ -112,8 +112,9 @@ class RustAnalyzerClient(
     - VSCode Extension: https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer
     """
 
+    @classmethod
     @override
-    def create_default_servers(self) -> DefaultServers:
+    def create_default_servers(cls) -> DefaultServers:
         return DefaultServers(
             local=RustAnalyzerLocalServer(),
             container=RustAnalyzerContainerServer(),

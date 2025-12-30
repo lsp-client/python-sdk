@@ -148,8 +148,9 @@ class DenoClient(
             project_files=["deno.json", "deno.jsonc"],
         )
 
+    @classmethod
     @override
-    def create_default_servers(self) -> DefaultServers:
+    def create_default_servers(cls) -> DefaultServers:
         return DefaultServers(
             local=DenoLocalServer(),
             container=DenoContainerServer(),

@@ -110,6 +110,7 @@ class LocalServer(Server):
                 logger.warning("Process shutdown failed, killing process")
                 await self.kill()
 
+    @override
     @asynccontextmanager
     async def run(
         self, workspace: Workspace, sender: Sender[ServerRequest]

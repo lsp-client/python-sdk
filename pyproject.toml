@@ -83,3 +83,4 @@ markers = [
     "integration: marks tests as integration tests",
     "pyright: marks tests that require pyright-langserver",
 ]
+norecursedirs = ["references"]

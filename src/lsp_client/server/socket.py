@@ -7,13 +7,10 @@ from typing import Self, final, override
 
 import anyio
 import tenacity
-from anyio.abc import ByteStream, IPAddressType
-from anyio.streams.buffered import BufferedByteStream
+from anyio.abc import AnyByteReceiveStream, AnyByteSendStream, ByteStream, IPAddressType
 from attrs import define, field
 from loguru import logger
 
-from lsp_client.jsonrpc.parse import read_raw_package, write_raw_package
-from lsp_client.jsonrpc.types import RawPackage
 from lsp_client.server.error import ServerRuntimeError
 from lsp_client.server.types import ServerRequest
 from lsp_client.utils.channel import Sender
@@ -39,7 +36,25 @@ class SocketServer(Server):
     timeout: float = 10.0
     """Timeout for connecting to the socket."""
 
-    _stream: BufferedByteStream = field(init=False)
+    _stream: ByteStream = field(init=False)
+
+    @override
+    async def check_availability(self) -> None:
+        try:
+            stream = await self.connect()
+            await stream.aclose()
+        except anyio.ConnectionFailed as e:
+            raise ServerRuntimeError(self, f"Failed to connect to socket: {e}") from e
+
+    @property
+    @override
+    def send_stream(self) -> AnyByteSendStream:
+        return self._stream
+
+    @property
+    @override
+    def receive_stream(self) -> AnyByteReceiveStream:
+        return self._stream
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(10),
@@ -60,26 +75,6 @@ class SocketServer(Server):
                 return await anyio.connect_unix(str(path))
 
     @override
-    async def check_availability(self) -> None:
-        try:
-            stream = await self.connect()
-            await stream.aclose()
-        except anyio.ConnectionFailed as e:
-            raise ServerRuntimeError(self, f"Failed to connect to socket: {e}") from e
-
-    @override
-    async def send(self, package: RawPackage) -> None:
-        await write_raw_package(self._stream, package)
-
-    @override
-    async def receive(self) -> RawPackage | None:
-        try:
-            return await read_raw_package(self._stream)
-        except (anyio.EndOfStream, anyio.IncompleteRead, anyio.ClosedResourceError):
-            logger.debug("Socket closed")
-            return
-
-    @override
     async def kill(self) -> None:
         await self._stream.aclose()
 
@@ -91,7 +86,7 @@ class SocketServer(Server):
         *,
         sender: Sender[ServerRequest] | None = None,
     ) -> AsyncGenerator[Self]:
-        self._stream = BufferedByteStream(await self.connect())
+        self._stream = await self.connect()
 
         async with self._stream:
             yield self

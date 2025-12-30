@@ -2,21 +2,16 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
-from functools import cached_property
 from pathlib import Path
 from typing import Protocol, Self, final, override
 
 import aioshutil
 import anyio
-import asyncer
-from anyio.abc import AnyByteSendStream, Process
-from anyio.streams.buffered import BufferedByteReceiveStream
+from anyio.abc import AnyByteReceiveStream, AnyByteSendStream, Process
 from attrs import Factory, define, field
 from loguru import logger
 
 from lsp_client.env import disable_auto_installation
-from lsp_client.jsonrpc.parse import read_raw_package, write_raw_package
-from lsp_client.jsonrpc.types import RawPackage
 from lsp_client.server.types import ServerRequest
 from lsp_client.utils.channel import Sender
 from lsp_client.utils.workspace import Workspace
@@ -43,38 +38,25 @@ class LocalServer(Server):
 
     _process: Process = field(init=False, default=None)
 
-    @cached_property
-    def stdin(self) -> AnyByteSendStream:
+    @property
+    @override
+    def send_stream(self) -> AnyByteSendStream:
         stdin = self._process.stdin
         assert stdin, "Process stdin is not available"
         return stdin
 
-    @cached_property
-    def stdout(self) -> BufferedByteReceiveStream:
+    @property
+    @override
+    def receive_stream(self) -> AnyByteReceiveStream:
         stdout = self._process.stdout
         assert stdout, "Process stdout is not available"
-        return BufferedByteReceiveStream(stdout)
+        return stdout
 
-    @cached_property
-    def stderr(self) -> BufferedByteReceiveStream:
+    @property
+    def stderr(self) -> AnyByteReceiveStream:
         stderr = self._process.stderr
         assert stderr, "Process stderr is not available"
-        return BufferedByteReceiveStream(stderr)
-
-    @override
-    async def send(self, package: RawPackage) -> None:
-        await write_raw_package(self.stdin, package)
-        logger.debug("Package sent: {}", package)
-
-    @override
-    async def receive(self) -> RawPackage | None:
-        try:
-            package = await read_raw_package(self.stdout)
-            logger.debug("Received package: {}", package)
-            return package
-        except (anyio.EndOfStream, anyio.IncompleteRead, anyio.ClosedResourceError):
-            logger.debug("Process stdout closed")
-            return None
+        return stderr
 
     @override
     async def kill(self) -> None:
@@ -130,14 +112,10 @@ class LocalServer(Server):
 
     @asynccontextmanager
     async def run(
-        self,
-        workspace: Workspace,
-        *,
-        sender: Sender[ServerRequest] | None = None,
+        self, workspace: Workspace, sender: Sender[ServerRequest]
     ) -> AsyncGenerator[Self]:
         async with (
             self.run_process(workspace),
-            asyncer.create_task_group() as tg,
+            super().run(workspace, sender=sender),
         ):
-            tg.soonify(self._dispatch)(sender)
             yield self

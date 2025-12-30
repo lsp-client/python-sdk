@@ -3,13 +3,18 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from functools import cached_property
 from typing import Self
 
+import anyio
 import asyncer
+from anyio.abc import AnyByteReceiveStream, AnyByteSendStream
+from anyio.streams.buffered import BufferedByteReceiveStream
 from attrs import define, field
 from loguru import logger
 
 from lsp_client.jsonrpc.channel import ResponseTable, response_channel
+from lsp_client.jsonrpc.parse import read_raw_package, write_raw_package
 from lsp_client.jsonrpc.types import (
     RawNotification,
     RawPackage,
@@ -27,51 +32,67 @@ class Server(ABC):
 
     _resp_table: ResponseTable = field(factory=ResponseTable, init=False)
 
+    @property
+    @abstractmethod
+    def send_stream(self) -> AnyByteSendStream:
+        """Stream for sending data to the server."""
+
+    @property
+    @abstractmethod
+    def receive_stream(self) -> AnyByteReceiveStream:
+        """Stream for receiving data from the server."""
+
+    @cached_property
+    def _buffered_receive_stream(self) -> BufferedByteReceiveStream:
+        return BufferedByteReceiveStream(self.receive_stream)
+
     @abstractmethod
     async def check_availability(self) -> None:
         """Check if the server runtime is available."""
 
-    @abstractmethod
+    async def kill(self) -> None:
+        await self.receive_stream.aclose()
+
     async def send(self, package: RawPackage) -> None:
         """Send a package to the runtime."""
+        await write_raw_package(self.send_stream, package)
+        logger.debug("Package sent: {}", package)
 
-    @abstractmethod
     async def receive(self) -> RawPackage | None:
         """Receive a package from the runtime."""
 
-    @abstractmethod
-    async def kill(self) -> None:
-        """Kill the runtime process."""
+        try:
+            package = await read_raw_package(self._buffered_receive_stream)
+            logger.debug("Received package: {}", package)
+            return package
+        except (anyio.EndOfStream, anyio.IncompleteRead, anyio.ClosedResourceError):
+            logger.debug("Stream closed")
+            return None
 
-    async def _dispatch(self, sender: Sender[ServerRequest] | None) -> None:
-        if not sender:
-            logger.warning(
-                "No ServerRequest sender provided, all server requests and notifications will be ignored."
-            )
+    async def iter_receive(self) -> AsyncGenerator[RawPackage]:
+        while package := await self.receive():
+            yield package
 
-        async def handle(package: RawPackage) -> None:
-            match package:
-                case {"result": _, "id": id} | {"error": _, "id": id}:
-                    self._resp_table.send(id, package)  # ty: ignore[invalid-argument-type]
-                case {"id": id, "method": _}:
-                    if not sender:
-                        raise RuntimeError(
-                            "Received a server request without a sender provided."
-                        )
+    async def _handle_package(
+        self, sender: Sender[ServerRequest], package: RawPackage
+    ) -> None:
+        match package:
+            case {"result": _, "id": id} | {"error": _, "id": id} as resp:
+                self._resp_table.send(id, resp)
+            case {"id": id, "method": _} as server_req:
+                tx, rx = response_channel.create()
+                await sender.send((server_req, tx))
+                resp = await rx.receive()
+                await self.send(resp)
+            case {"method": _} as noti:
+                if not sender:
+                    return
+                await sender.send(noti)
 
-                    tx, rx = response_channel.create()
-                    await sender.send((package, tx))  # ty: ignore[invalid-argument-type]
-                    resp = await rx.receive()
-                    await self.send(resp)
-                case {"method": _}:
-                    if not sender:
-                        return
-
-                    await sender.send(package)  # ty: ignore[invalid-argument-type]
-
+    async def _dispatch(self, sender: Sender[ServerRequest]) -> None:
         async with asyncer.create_task_group() as tg:
             while package := await self.receive():
-                tg.soonify(handle)(package)
+                tg.soonify(self._handle_package)(sender, package)
 
     async def request(self, request: RawRequest) -> RawResponsePackage:
         await self.send(request)
@@ -80,12 +101,11 @@ class Server(ABC):
     async def notify(self, notification: RawNotification) -> None:
         await self.send(notification)
 
-    @abstractmethod
     @asynccontextmanager
-    def run(
-        self,
-        workspace: Workspace,
-        *,
-        sender: Sender[ServerRequest] | None = None,
+    async def run(
+        self, workspace: Workspace, sender: Sender[ServerRequest]
     ) -> AsyncGenerator[Self]:
         """Run the server."""
+        async with asyncer.create_task_group() as tg:
+            tg.soonify(self._dispatch)(sender)
+            yield self

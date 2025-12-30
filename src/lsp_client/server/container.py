@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import Literal, Self, final, override
 
 import anyio
+from anyio.abc import AnyByteReceiveStream, AnyByteSendStream
 from attrs import Factory, define, field
 from loguru import logger
 
-from lsp_client.jsonrpc.parse import RawPackage
 from lsp_client.server.types import ServerRequest
 from lsp_client.utils.channel import Sender
 from lsp_client.utils.workspace import Workspace
@@ -147,6 +147,34 @@ class ContainerServer(Server):
 
     _local: LocalServer = field(init=False)
 
+    @property
+    @override
+    def send_stream(self) -> AnyByteSendStream:
+        return self._local.send_stream
+
+    @property
+    @override
+    def receive_stream(self) -> AnyByteReceiveStream:
+        return self._local.receive_stream
+
+    @override
+    async def kill(self) -> None:
+        await self._local.kill()
+
+    @override
+    async def check_availability(self) -> None:
+        try:
+            await anyio.run_process(
+                [self.backend, "pull", self.image],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except anyio.ProcessError as e:
+            raise RuntimeError(
+                f"Container backend '{self.backend}' is not available or image '{self.image}' "
+                "could not be pulled."
+            ) from e
+
     def format_args(self, workspace: Workspace) -> list[str]:
         args = ["run", "--rm", "-i"]
 
@@ -183,38 +211,9 @@ class ContainerServer(Server):
 
         return args
 
-    @override
-    async def send(self, package: RawPackage) -> None:
-        await self._local.send(package)
-
-    @override
-    async def receive(self) -> RawPackage | None:
-        return await self._local.receive()
-
-    @override
-    async def kill(self) -> None:
-        await self._local.kill()
-
-    @override
-    async def check_availability(self) -> None:
-        try:
-            await anyio.run_process(
-                [self.backend, "pull", self.image],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        except anyio.ProcessError as e:
-            raise RuntimeError(
-                f"Container backend '{self.backend}' is not available or image '{self.image}' "
-                "could not be pulled."
-            ) from e
-
     @asynccontextmanager
     async def run(
-        self,
-        workspace: Workspace,
-        *,
-        sender: Sender[ServerRequest] | None = None,
+        self, workspace: Workspace, sender: Sender[ServerRequest]
     ) -> AsyncGenerator[Self]:
         args = self.format_args(workspace)
         logger.debug("Running docker runtime with command: {}", args)

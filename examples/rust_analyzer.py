@@ -19,7 +19,7 @@ async def main():
     async with RustAnalyzerClient() as client:
         # Get and display the language ID for this client
         # This should return "rust" for Rust Analyzer
-        print(client.get_language_id())
+        print(client.get_language_config().kind.value)
 
 
 if __name__ == "__main__":

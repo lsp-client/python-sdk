@@ -17,7 +17,7 @@ class CustomClient(PyreflyClient):
         print(f"✨ Log Message: {noti.params.message}")
 
 
-async def main():
+async def main() -> None:
     async with CustomClient() as client:
         print(client)
 

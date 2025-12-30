@@ -15,7 +15,7 @@ from lsp_client.clients.pyrefly import PyreflyClient
 lsp_client.enable_logging()
 
 
-async def main():
+async def main() -> None:
     # Initialize Pyrefly client with local server
     # if `workspace` not specified, defaults to current working directory
     async with PyreflyClient() as client:

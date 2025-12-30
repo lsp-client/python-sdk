@@ -85,7 +85,9 @@ class channel[T](NamedTuple):
 
     @classmethod
     @asynccontextmanager
-    async def create(cls, max_buffer_size: int = 128) -> AsyncGenerator[Self]:
+    async def create(
+        cls, max_buffer_size: int = 128
+    ) -> AsyncGenerator[channel[T]]:  # ty can't resolve `Self` here
         sender, receiver = anyio.create_memory_object_stream[T](max_buffer_size)
         async with sender, receiver:
             yield cls(sender=sender, receiver=receiver)

@@ -4,6 +4,7 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal, Self, override
 
@@ -58,9 +59,12 @@ class Client(
     initialization_options: dict = field(factory=dict)
 
     _server: Server = field(init=False)
-    _workspace: Workspace = field(init=False)
     _buffer: LSPFileBuffer = field(factory=LSPFileBuffer, init=False)
     _config: ConfigurationMap = Factory(ConfigurationMap)
+
+    @cached_property
+    def _workspace(self) -> Workspace:
+        return format_workspace(self._workspace_arg)
 
     async def _iter_candidate_servers(self) -> AsyncGenerator[Server]:
         """
@@ -96,7 +100,7 @@ class Client(
             errors: list[ServerRuntimeError] = []
             async for candidate in self._iter_candidate_servers():
                 try:
-                    async with candidate.run(self._workspace, sender=sender) as server:  # ty: ignore[invalid-argument-type]
+                    async with candidate.run(self._workspace, sender=sender) as server:
                         yield server, receiver
                         return
                 except ServerRuntimeError as e:
@@ -118,8 +122,9 @@ class Client(
     def get_server(self) -> Server:
         return self._server
 
+    @classmethod
     @abstractmethod
-    def create_default_servers(self) -> DefaultServers:
+    def create_default_servers(cls) -> DefaultServers:
         """Create default servers for this client."""
 
     def create_default_config(self) -> dict[str, Any] | None:
@@ -244,20 +249,15 @@ class Client(
     @asynccontextmanager
     @logger.catch(reraise=True)
     async def __asynccontextmanager__(self) -> AsyncGenerator[Self]:
-        self._workspace = format_workspace(self._workspace_arg)
-
-        if init_config := self.create_default_config():
-            await self._config.update_global(init_config)
-
         async with (
             asyncer.create_task_group() as tg,
-            self.run_server() as (server, receiver),  # ty: ignore[invalid-argument-type]
+            self.run_server() as (server, receiver),
         ):
             self._server = server
 
             # start to receive server requests here,
             # since server notification can be sent before `initialize`
-            tg.soonify(self._dispatch_server_requests)(receiver)  # ty: ignore[invalid-argument-type]
+            tg.soonify(self._dispatch_server_requests)(receiver)
 
             client_capabilities = build_client_capabilities(self.__class__)
             root_workspace = self.get_workspace().get(DEFAULT_WORKSPACE_DIR)
@@ -282,6 +282,9 @@ class Client(
                     workspace_folders=self._workspace.to_folders(),
                 )
             )
+
+            if init_config := self.create_default_config():
+                await self._config.update_global(init_config)
 
             try:
                 yield self

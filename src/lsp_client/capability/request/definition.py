@@ -83,14 +83,21 @@ class WithRequestDefinition(
         file_path: AnyPath,
         position: Position,
     ) -> Sequence[lsp_type.Location] | None:
-        match await self.request_definition(
-            file_path,
-            position,
-        ):
+        match await self.request_definition(file_path, position):
             case lsp_type.Location() as loc:
                 return [loc]
             case locations if is_locations(locations):
                 return list(locations)
+            case links if is_location_links(links):
+                return [
+                    lsp_type.Location(
+                        uri=link.target_uri,
+                        range=link.target_selection_range,
+                    )
+                    for link in links
+                ]
+            case None:
+                return None
             case other:
                 logger.warning("Definition returned with unexpected result: {}", other)
                 return None
@@ -100,12 +107,11 @@ class WithRequestDefinition(
         file_path: AnyPath,
         position: Position,
     ) -> Sequence[lsp_type.LocationLink] | None:
-        match await self.request_definition(
-            file_path,
-            position,
-        ):
+        match await self.request_definition(file_path, position):
             case links if is_location_links(links):
                 return list(links)
+            case None:
+                return None
             case other:
                 logger.warning("Definition returned with unexpected result: {}", other)
                 return None

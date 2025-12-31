@@ -81,6 +81,15 @@ class WithRequestImplementation(
                 return [loc]
             case locations if is_locations(locations):
                 return list(locations)
+            case links if is_location_links(links):
+                return [
+                    lsp_type.Location(
+                        uri=link.target_uri, range=link.target_selection_range
+                    )
+                    for link in links
+                ]
+            case None:
+                return None
             case other:
                 logger.warning(
                     "Implementation returned with unexpected result: {}", other
@@ -93,6 +102,8 @@ class WithRequestImplementation(
         match await self.request_implementation(file_path, position):
             case links if is_location_links(links):
                 return list(links)
+            case None:
+                return None
             case other:
                 logger.warning(
                     "Implementation returned with unexpected result: {}", other

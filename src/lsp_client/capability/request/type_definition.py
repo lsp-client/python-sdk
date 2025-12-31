@@ -83,6 +83,15 @@ class WithRequestTypeDefinition(
                 return [loc]
             case locations if is_locations(locations):
                 return list(locations)
+            case links if is_location_links(links):
+                return [
+                    lsp_type.Location(
+                        uri=link.target_uri, range=link.target_selection_range
+                    )
+                    for link in links
+                ]
+            case None:
+                return None
             case other:
                 logger.warning(
                     "TypeDefinition returned with unexpected result: {}", other
@@ -95,6 +104,8 @@ class WithRequestTypeDefinition(
         match await self.request_type_definition(file_path, position):
             case links if is_location_links(links):
                 return list(links)
+            case None:
+                return None
             case other:
                 logger.warning(
                     "TypeDefinition returned with unexpected result: {}", other

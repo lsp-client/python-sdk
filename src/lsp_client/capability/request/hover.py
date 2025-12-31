@@ -69,7 +69,7 @@ class WithRequestHover(
         if hover is None:
             return None
 
-        def to_block(item: object) -> str:
+        def to_block(item: str | lsp_type.MarkedStringWithLanguage) -> str:
             match item:
                 case lsp_type.MarkedStringWithLanguage(
                     language=str() as lang, value=str() as val
@@ -78,33 +78,18 @@ class WithRequestHover(
                 case str() as s:
                     return f"```plaintext\n{s}\n```"
                 case _:
-                    return f"```plaintext\n{item!s}\n```"
+                    raise ValueError(f"Unsupported hover content type: {item!r}")
 
-        match contents := hover.contents:
+        match hover.contents:
             case lsp_type.MarkupContent() as mc:
                 return mc
-            case lsp_type.MarkedStringWithLanguage():
+            case lsp_type.MarkedStringWithLanguage() | str() as content:
                 return lsp_type.MarkupContent(
                     kind=lsp_type.MarkupKind.Markdown,
-                    value=to_block(contents),
+                    value=to_block(content),
                 )
-            case str():
+            case contents:
                 return lsp_type.MarkupContent(
                     kind=lsp_type.MarkupKind.Markdown,
-                    value=to_block(contents),
-                )
-            case list() as items:
-                return lsp_type.MarkupContent(
-                    kind=lsp_type.MarkupKind.Markdown,
-                    value="\n\n".join(to_block(i) for i in items),
-                )
-            case tuple() as items:
-                return lsp_type.MarkupContent(
-                    kind=lsp_type.MarkupKind.Markdown,
-                    value="\n\n".join(to_block(i) for i in items),
-                )
-            case _:
-                return lsp_type.MarkupContent(
-                    kind=lsp_type.MarkupKind.Markdown,
-                    value=to_block(contents),
+                    value="\n\n".join(to_block(content) for content in contents),
                 )

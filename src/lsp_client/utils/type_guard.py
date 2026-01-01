@@ -54,5 +54,5 @@ def is_code_actions(
     result: Any,
 ) -> TypeGuard[Iterable[lsp_type.Command | lsp_type.CodeAction]]:
     return result is not None and all(
-        isinstance(item, (lsp_type.Command, lsp_type.CodeAction)) for item in result
+        isinstance(item, lsp_type.Command | lsp_type.CodeAction) for item in result
     )

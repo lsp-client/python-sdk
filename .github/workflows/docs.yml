@@ -41,7 +41,7 @@ jobs:
           uv run pdoc src/lsp_client --output-dir dist --docformat google
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
 

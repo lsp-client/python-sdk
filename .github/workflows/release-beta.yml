@@ -1,0 +1,73 @@
+name: Release Beta
+
+on:
+  push:
+    tags:
+      - 'v*.*.*-beta.*'
+      - 'v*.*.*-b*'
+      - 'v*.*.*-rc.*'
+      - 'v*.*.*a*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Beta tag to release (e.g., v0.2.1-beta.1)'
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  test:
+    name: Quality Gate
+    uses: ./.github/workflows/ci.yml
+
+  release-beta:
+    name: Publish Beta Release
+    needs: [test]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/lsp-client/
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Verify version consistency
+        run: |
+          VERSION=$(grep -m 1 'version = ' pyproject.toml | cut -d '"' -f 2)
+          TAG=${{ github.event.inputs.tag || github.ref_name }}
+          CLEAN_TAG=${TAG#v}
+          if [ "$VERSION" != "$CLEAN_TAG" ]; then
+            echo "::error::Version in pyproject.toml ($VERSION) does not match tag ($TAG)"
+            exit 1
+          fi
+          
+          if [[ ! "$VERSION" =~ [abrc] ]]; then
+            echo "::error::Beta release version ($VERSION) must contain pre-release identifiers (e.g. 0.2.1b1 or 0.2.1-beta.1)"
+            exit 1
+          fi
+
+      - name: Build distribution
+        run: uv build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          prerelease: true
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

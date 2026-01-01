@@ -21,6 +21,7 @@ on:
       - "justfile"
       - ".pre-commit-config.yaml"
       - ".github/workflows/ci.yml"
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

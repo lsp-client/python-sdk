@@ -36,8 +36,6 @@ class LanguageConfig:
             if any((project_path / proj).exists() for proj in self.project_files):
                 return project_path
 
-        return dir_path
-
     def find_project_root(self, path: Path) -> Path | None:
         if path.is_file():
             if not any(path.name.endswith(suffix) for suffix in self.suffixes):

@@ -42,13 +42,13 @@ class Server(ABC):
     def receive_stream(self) -> AnyByteReceiveStream:
         """Stream for receiving data from the server."""
 
-    @cached_property
-    def _buffered_receive_stream(self) -> BufferedByteReceiveStream:
-        return BufferedByteReceiveStream(self.receive_stream)
-
     @abstractmethod
     async def check_availability(self) -> None:
         """Check if the server runtime is available."""
+
+    @cached_property
+    def _buffered_receive_stream(self) -> BufferedByteReceiveStream:
+        return BufferedByteReceiveStream(self.receive_stream)
 
     async def kill(self) -> None:
         await self.receive_stream.aclose()
@@ -59,8 +59,6 @@ class Server(ABC):
         logger.debug("Package sent: {}", package)
 
     async def receive(self) -> RawPackage | None:
-        """Receive a package from the runtime."""
-
         try:
             package = await read_raw_package(self._buffered_receive_stream)
             logger.debug("Received package: {}", package)
@@ -68,10 +66,6 @@ class Server(ABC):
         except (anyio.EndOfStream, anyio.IncompleteRead, anyio.ClosedResourceError):
             logger.debug("Stream closed")
             return None
-
-    async def iter_receive(self) -> AsyncGenerator[RawPackage]:
-        while package := await self.receive():
-            yield package
 
     async def _handle_package(
         self, sender: Sender[ServerRequest], package: RawPackage
@@ -104,7 +98,6 @@ class Server(ABC):
     async def run(
         self, workspace: Workspace, sender: Sender[ServerRequest]
     ) -> AsyncGenerator[Self]:
-        """Run the server."""
         async with asyncer.create_task_group() as tg:
             tg.soonify(self._dispatch)(sender)
             yield self

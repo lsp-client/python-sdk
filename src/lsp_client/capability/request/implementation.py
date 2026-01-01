@@ -84,7 +84,8 @@ class WithRequestImplementation(
             case links if is_location_links(links):
                 return [
                     lsp_type.Location(
-                        uri=link.target_uri, range=link.target_selection_range
+                        uri=link.target_uri,
+                        range=link.target_selection_range,
                     )
                     for link in links
                 ]

@@ -81,9 +81,7 @@ class SocketServer(Server):
     @override
     @asynccontextmanager
     async def run(
-        self,
-        workspace: Workspace,
-        sender: Sender[ServerRequest],
+        self, workspace: Workspace, sender: Sender[ServerRequest]
     ) -> AsyncGenerator[Self]:
         self._stream = await self.connect()
 

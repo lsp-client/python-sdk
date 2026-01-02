@@ -23,14 +23,10 @@ type LspResponse[R] = R | None
 class LspInteraction[C: Client]:
     client: C
     workspace_root: Path
-    _resolved_workspace: Path | None = attrs.field(default=None)
-
     @property
     def resolved_workspace(self) -> Path:
         """Get resolved workspace path for path comparisons."""
-        if self._resolved_workspace is None:
-            return self.workspace_root.resolve()
-        return self._resolved_workspace
+        return self.workspace_root.resolve()
 
     def full_path(self, relative_path: str) -> Path:
         # Return the original path (not resolved) for file operations
@@ -339,12 +335,6 @@ class DefinitionAssertion:
         match self.response:
             case lsp_type.Location() as loc:
                 actual_path = Path(self.interaction.client.from_uri(loc.uri))
-                # Print debug info
-                print("\n[DEBUG] expect_definition:")
-                print(f"  Expected path: {expected_path}")
-                print(f"  Actual path: {actual_path}")
-                print(f"  Expected range: {expected_range}")
-                print(f"  Actual range: {loc.range}")
                 # Compare using relative paths to handle symlinks
                 try:
                     actual_rel = actual_path.relative_to(

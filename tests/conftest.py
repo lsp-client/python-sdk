@@ -105,9 +105,9 @@ class Greeter:
 
 
 @pytest.fixture
-def sample_workspace(temp_workspace, sample_python_file):
+def sample_workspace(sample_python_file):
     """Create a sample workspace with files for testing."""
-    return temp_workspace
+    return sample_python_file.parent
 
 
 # Error fixtures

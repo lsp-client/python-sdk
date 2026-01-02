@@ -17,12 +17,19 @@ FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "pyrefly"
 async def test_pyrefly_conformance_protocols():
     """Test protocol conformance with pyrefly.
 
-    Note: This test is skipped because protocols_definition.py requires
-    specific pyrefly configuration that is not available in the test fixtures.
-    The test file is part of pyrefly's conformance tests and expects a
-    properly configured pyrefly project.
+    This test is currently skipped because it depends on pyrefly's own
+    conformance test project (including ``protocols_definition.py`` and its
+    configuration), which is not included in this repository's fixtures.
+
+    To enable this test in the future, add the pyrefly conformance project
+    under ``FIXTURES_DIR`` so that ``protocols_definition.py`` and its
+    expected configuration are available, and then remove the unconditional
+    ``pytest.skip`` call below.
     """
-    pytest.skip("protocols_definition.py requires specific pyrefly configuration")
+    pytest.skip(
+        "Skipped: requires pyrefly's conformance project (protocols_definition.py "
+        "and its configuration) to be present under FIXTURES_DIR."
+    )
 
 
 @pytest.mark.e2e

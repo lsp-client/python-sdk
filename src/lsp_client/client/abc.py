@@ -52,12 +52,22 @@ class Client(
     _server_arg: Server | Literal["container", "local"] | None = field(
         alias="server", default=None
     )
+    """LSP server to use. Can be a Server instance, 'container', or 'local'."""
+
     _workspace_arg: RawWorkspace = field(alias="workspace", factory=Path.cwd)
+    """Workspace directory or configuration."""
 
     sync_file: bool = True
+    """Whether to sync file contents with the server."""
+
     request_timeout: float = 5.0
+    """Timeout in seconds for JSON-RPC requests."""
+
     initialization_options: dict = field(factory=dict)
+    """Custom initialization options for the server."""
+
     unmanaged: bool = False
+    """If True, skip automatic lifecycle management (initialize/shutdown)."""
 
     _server: Server = field(init=False)
     _buffer: LSPFileBuffer = field(factory=LSPFileBuffer, init=False)

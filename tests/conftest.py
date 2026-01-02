@@ -104,6 +104,12 @@ class Greeter:
     return path
 
 
+@pytest.fixture
+def sample_workspace(temp_workspace, sample_python_file):
+    """Create a sample workspace with files for testing."""
+    return temp_workspace
+
+
 # Error fixtures
 
 

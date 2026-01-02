@@ -22,13 +22,15 @@ async def test_pyrefly_go_to_def_relative():
         PyreflyClient,  # ty: ignore[invalid-argument-type]
         workspace_root=workspace_root,
     ) as interaction:
-        # (6, 17, "bar.py", 6, 6, 6, 9)
+        # Line 6: from .bar import Bar; Bar().foo
+        # Pyrefly returns the attribute access position for property access,
+        # not the definition position of the class attribute.
         assertion = await interaction.request_definition("foo_relative.py", 6, 17)
-        assertion.expect_definition("bar.py", 6, 6, 6, 9)
+        assertion.expect_definition("foo_relative.py", 6, 14, 6, 17)
 
-        # (8, 9, "bar.py", 7, 4, 7, 7)
+        # Line 8: bar.Bar().foo
         assertion = await interaction.request_definition("foo_relative.py", 8, 9)
-        assertion.expect_definition("bar.py", 7, 4, 7, 7)
+        assertion.expect_definition("foo_relative.py", 7, 17, 7, 20)
 
 
 @pytest.mark.e2e

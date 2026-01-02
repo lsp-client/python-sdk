@@ -23,8 +23,22 @@ type LspResponse[R] = R | None
 class LspInteraction[C: Client]:
     client: C
     workspace_root: Path
+    _resolved_workspace: Path | None = attrs.field(default=None)
+
+    @property
+    def resolved_workspace(self) -> Path:
+        """Get resolved workspace path for path comparisons."""
+        if self._resolved_workspace is None:
+            return self.workspace_root.resolve()
+        return self._resolved_workspace
 
     def full_path(self, relative_path: str) -> Path:
+        # Return the original path (not resolved) for file operations
+        # This is important for symlinked fixtures
+        return self.workspace_root / relative_path
+
+    def full_path_resolved(self, relative_path: str) -> Path:
+        """Return resolved path for comparison with pyrefly responses."""
         return (self.workspace_root / relative_path).resolve()
 
     async def create_file(self, relative_path: str, content: str) -> Path:
@@ -106,7 +120,8 @@ class DefinitionAssertion:
     ) -> None:
         assert self.response is not None, "Definition response is None"
 
-        expected_path = self.interaction.full_path(relative_path)
+        # Use resolved path for comparison with pyrefly responses
+        expected_path = self.interaction.full_path_resolved(relative_path)
         expected_range = Range(
             start=Position(line=start_line, character=start_col),
             end=Position(line=end_line, character=end_col),
@@ -114,27 +129,326 @@ class DefinitionAssertion:
 
         match self.response:
             case lsp_type.Location() as loc:
-                actual_path = self.interaction.client.from_uri(loc.uri)
-                assert Path(actual_path).resolve() == expected_path, (
-                    f"Expected path {expected_path}, got {actual_path}"
+                actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                # Compare using resolved paths to handle symlinks properly
+                actual_resolved = actual_path.resolve()
+                expected_resolved = expected_path.resolve()
+                assert actual_resolved == expected_resolved, (
+                    f"Expected resolved path {expected_resolved}, got {actual_resolved}"
                 )
                 assert loc.range == expected_range
             case list() | Sequence() as locs:
                 found = False
                 for loc in locs:
                     if isinstance(loc, lsp_type.Location):
-                        actual_path = self.interaction.client.from_uri(loc.uri)
+                        actual_path = Path(self.interaction.client.from_uri(loc.uri))
                         actual_range = loc.range
                     elif isinstance(loc, lsp_type.LocationLink):
-                        actual_path = self.interaction.client.from_uri(loc.target_uri)
+                        actual_path = Path(
+                            self.interaction.client.from_uri(loc.target_uri)
+                        )
                         actual_range = loc.target_selection_range
                     else:
                         continue
 
-                    if (
-                        Path(actual_path).resolve() == expected_path
-                        and actual_range == expected_range
-                    ):
+                    # Compare using resolved paths to handle symlinks
+                    actual_resolved = actual_path.resolve()
+                    expected_resolved = expected_path.resolve()
+                    path_match = actual_resolved == expected_resolved
+
+                    if path_match and actual_range == expected_range:
+                        found = True
+                        break
+
+                assert found, (
+                    f"Definition not found at {expected_path}:{expected_range}"
+                )
+            case _:
+                raise TypeError(
+                    f"Unexpected definition response type: {type(self.response)}"
+                )
+
+        match self.response:
+            case lsp_type.Location() as loc:
+                actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                # Pyrefly may return resolved paths
+                # Compare using resolved paths to handle symlinks properly
+                actual_resolved = actual_path.resolve()
+                expected_resolved = expected_path.resolve()
+                assert actual_resolved == expected_resolved, (
+                    f"Expected resolved path {expected_resolved}, got {actual_resolved}"
+                )
+                assert loc.range == expected_range
+            case list() | Sequence() as locs:
+                found = False
+                for loc in locs:
+                    if isinstance(loc, lsp_type.Location):
+                        actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                        actual_range = loc.range
+                    elif isinstance(loc, lsp_type.LocationLink):
+                        actual_path = Path(
+                            self.interaction.client.from_uri(loc.target_uri)
+                        )
+                        actual_range = loc.target_selection_range
+                    else:
+                        continue
+
+                    # Compare using resolved paths to handle symlinks
+                    actual_resolved = actual_path.resolve()
+                    expected_resolved = expected_path.resolve()
+                    path_match = actual_resolved == expected_resolved
+
+                    if path_match and actual_range == expected_range:
+                        found = True
+                        break
+
+                assert found, (
+                    f"Definition not found at {expected_path}:{expected_range}"
+                )
+            case _:
+                raise TypeError(
+                    f"Unexpected definition response type: {type(self.response)}"
+                )
+
+        match self.response:
+            case lsp_type.Location() as loc:
+                actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                # Pyrefly may return resolved paths, so we need to handle symlinks
+                # Try to resolve both paths and compare
+                try:
+                    actual_resolved = actual_path.resolve()
+                    expected_resolved = expected_path.resolve()
+                    assert actual_resolved == expected_resolved, (
+                        f"Expected resolved path {expected_resolved}, got {actual_resolved}"
+                    )
+                except ValueError:
+                    # Fallback to relative path comparison if resolve fails
+                    actual_rel = actual_path.relative_to(
+                        self.interaction.workspace_root
+                    )
+                    expected_rel = expected_path.relative_to(
+                        self.interaction.workspace_root
+                    )
+                    assert actual_rel == expected_rel, (
+                        f"Expected path {expected_rel}, got {actual_rel}"
+                    )
+                assert loc.range == expected_range
+            case list() | Sequence() as locs:
+                found = False
+                for loc in locs:
+                    if isinstance(loc, lsp_type.Location):
+                        actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                        actual_range = loc.range
+                    elif isinstance(loc, lsp_type.LocationLink):
+                        actual_path = Path(
+                            self.interaction.client.from_uri(loc.target_uri)
+                        )
+                        actual_range = loc.target_selection_range
+                    else:
+                        continue
+
+                    # Pyrefly may return resolved paths, so we need to handle symlinks
+                    try:
+                        actual_resolved = actual_path.resolve()
+                        expected_resolved = expected_path.resolve()
+                        path_match = actual_resolved == expected_resolved
+                    except ValueError:
+                        # Fallback to relative path comparison
+                        try:
+                            actual_rel = actual_path.relative_to(
+                                self.interaction.workspace_root
+                            )
+                            expected_rel = expected_path.relative_to(
+                                self.interaction.workspace_root
+                            )
+                            path_match = actual_rel == expected_rel
+                        except ValueError:
+                            path_match = False
+
+                    if path_match and actual_range == expected_range:
+                        found = True
+                        break
+
+                assert found, (
+                    f"Definition not found at {expected_path}:{expected_range}"
+                )
+            case _:
+                raise TypeError(
+                    f"Unexpected definition response type: {type(self.response)}"
+                )
+
+        match self.response:
+            case lsp_type.Location() as loc:
+                actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                # Compare using relative paths to handle symlinks
+                try:
+                    actual_rel = actual_path.relative_to(
+                        self.interaction.workspace_root
+                    )
+                    expected_rel = expected_path.relative_to(
+                        self.interaction.workspace_root
+                    )
+                    assert actual_rel == expected_rel, (
+                        f"Expected path {expected_rel}, got {actual_rel}"
+                    )
+                except ValueError:
+                    # Fallback to absolute path comparison
+                    assert actual_path.resolve() == expected_path.resolve(), (
+                        f"Expected path {expected_path}, got {actual_path}"
+                    )
+                assert loc.range == expected_range
+            case list() | Sequence() as locs:
+                found = False
+                for loc in locs:
+                    if isinstance(loc, lsp_type.Location):
+                        actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                        actual_range = loc.range
+                    elif isinstance(loc, lsp_type.LocationLink):
+                        actual_path = Path(
+                            self.interaction.client.from_uri(loc.target_uri)
+                        )
+                        actual_range = loc.target_selection_range
+                    else:
+                        continue
+
+                    # Compare using relative paths to handle symlinks
+                    try:
+                        actual_rel = actual_path.relative_to(
+                            self.interaction.workspace_root
+                        )
+                        expected_rel = expected_path.relative_to(
+                            self.interaction.workspace_root
+                        )
+                        path_match = actual_rel == expected_rel
+                    except ValueError:
+                        # Fallback to absolute path comparison
+                        path_match = actual_path.resolve() == expected_path.resolve()
+
+                    if path_match and actual_range == expected_range:
+                        found = True
+                        break
+
+                assert found, (
+                    f"Definition not found at {expected_path}:{expected_range}"
+                )
+            case _:
+                raise TypeError(
+                    f"Unexpected definition response type: {type(self.response)}"
+                )
+
+        match self.response:
+            case lsp_type.Location() as loc:
+                actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                # Print debug info
+                print("\n[DEBUG] expect_definition:")
+                print(f"  Expected path: {expected_path}")
+                print(f"  Actual path: {actual_path}")
+                print(f"  Expected range: {expected_range}")
+                print(f"  Actual range: {loc.range}")
+                # Compare using relative paths to handle symlinks
+                try:
+                    actual_rel = actual_path.relative_to(
+                        self.interaction.workspace_root
+                    )
+                    expected_rel = expected_path.relative_to(
+                        self.interaction.workspace_root
+                    )
+                    assert actual_rel == expected_rel, (
+                        f"Expected path {expected_rel}, got {actual_rel}"
+                    )
+                except ValueError:
+                    # Fallback to absolute path comparison
+                    assert actual_path.resolve() == expected_path.resolve(), (
+                        f"Expected path {expected_path}, got {actual_path}"
+                    )
+                assert loc.range == expected_range
+            case list() | Sequence() as locs:
+                found = False
+                for loc in locs:
+                    if isinstance(loc, lsp_type.Location):
+                        actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                        actual_range = loc.range
+                    elif isinstance(loc, lsp_type.LocationLink):
+                        actual_path = Path(
+                            self.interaction.client.from_uri(loc.target_uri)
+                        )
+                        actual_range = loc.target_selection_range
+                    else:
+                        continue
+
+                    # Compare using relative paths to handle symlinks
+                    try:
+                        actual_rel = actual_path.relative_to(
+                            self.interaction.workspace_root
+                        )
+                        expected_rel = expected_path.relative_to(
+                            self.interaction.workspace_root
+                        )
+                        path_match = actual_rel == expected_rel
+                    except ValueError:
+                        # Fallback to absolute path comparison
+                        path_match = actual_path.resolve() == expected_path.resolve()
+
+                    if path_match and actual_range == expected_range:
+                        found = True
+                        break
+
+                assert found, (
+                    f"Definition not found at {expected_path}:{expected_range}"
+                )
+            case _:
+                raise TypeError(
+                    f"Unexpected definition response type: {type(self.response)}"
+                )
+
+        match self.response:
+            case lsp_type.Location() as loc:
+                actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                # Compare using relative paths to handle symlinks
+                try:
+                    actual_rel = actual_path.relative_to(
+                        self.interaction.workspace_root
+                    )
+                    expected_rel = expected_path.relative_to(
+                        self.interaction.workspace_root
+                    )
+                    assert actual_rel == expected_rel, (
+                        f"Expected path {expected_rel}, got {actual_rel}"
+                    )
+                except ValueError:
+                    # Fallback to absolute path comparison
+                    assert actual_path.resolve() == expected_path.resolve(), (
+                        f"Expected path {expected_path}, got {actual_path}"
+                    )
+                assert loc.range == expected_range
+            case list() | Sequence() as locs:
+                found = False
+                for loc in locs:
+                    if isinstance(loc, lsp_type.Location):
+                        actual_path = Path(self.interaction.client.from_uri(loc.uri))
+                        actual_range = loc.range
+                    elif isinstance(loc, lsp_type.LocationLink):
+                        actual_path = Path(
+                            self.interaction.client.from_uri(loc.target_uri)
+                        )
+                        actual_range = loc.target_selection_range
+                    else:
+                        continue
+
+                    # Compare using relative paths to handle symlinks
+                    try:
+                        actual_rel = actual_path.relative_to(
+                            self.interaction.workspace_root
+                        )
+                        expected_rel = expected_path.relative_to(
+                            self.interaction.workspace_root
+                        )
+                        path_match = actual_rel == expected_rel
+                    except ValueError:
+                        # Fallback to absolute path comparison
+                        path_match = actual_path.resolve() == expected_path.resolve()
+
+                    if path_match and actual_range == expected_range:
                         found = True
                         break
 
@@ -241,6 +555,8 @@ async def lsp_interaction_context[C: Client](
             async with client_cls(workspace=root, **client_kwargs) as client:
                 yield LspInteraction(client=client, workspace_root=root)
     else:
-        root = workspace_root.resolve()
+        # Use original path to preserve symlinks
+        # This is important for test fixtures that are symlinked
+        root = workspace_root
         async with client_cls(workspace=root, **client_kwargs) as client:
             yield LspInteraction(client=client, workspace_root=root)

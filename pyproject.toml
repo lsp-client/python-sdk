@@ -1,6 +1,6 @@
 [project]
 name = "lsp-client"
-version = "0.2.0"
+version = "0.3.0"
 description = "Full-featured, well-typed, and easy-to-use LSP client"
 readme = "README.md"
 authors = [{ name = "observerw", email = "wozluohd@gmail.com" }]

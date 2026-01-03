@@ -23,6 +23,7 @@ type LspResponse[R] = R | None
 class LspInteraction[C: Client]:
     client: C
     workspace_root: Path
+
     @property
     def resolved_workspace(self) -> Path:
         """Get resolved workspace path for path comparisons."""

@@ -40,6 +40,7 @@ class Server(ABC):
     :class:`Server` are free to choose how the underlying server process or
     transport is managed, as long as they honor this interface.
     """
+
     @abstractmethod
     async def check_availability(self) -> None:
         """Check if the server runtime is available."""

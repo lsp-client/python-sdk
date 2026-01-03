@@ -28,6 +28,18 @@ from lsp_client.utils.workspace import Workspace
 
 @define
 class Server(ABC):
+    """Abstract base class for language server runtimes.
+
+    This class defines the high-level contract for communicating with a
+    language server: checking availability, sending requests and
+    notifications, managing the server lifecycle, and running it within a
+    workspace context.
+
+    Unlike :class:`StreamServer`, which provides a concrete implementation
+    based on byte streams and JSON-RPC protocol handling, implementations of
+    :class:`Server` are free to choose how the underlying server process or
+    transport is managed, as long as they honor this interface.
+    """
     @abstractmethod
     async def check_availability(self) -> None:
         """Check if the server runtime is available."""

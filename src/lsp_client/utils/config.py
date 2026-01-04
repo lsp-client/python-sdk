@@ -49,12 +49,14 @@ Config = dict[str, Any]
 GlobalConfig = Config
 
 
-class ScopeConfig(Config):
+@define
+class ScopeConfig:
     """
     A helper class to represent a scope-specific configuration.
     """
 
     pattern: Pattern
+    config: Config
 
 
 @define
@@ -77,7 +79,7 @@ class ConfigurationMap:
     async def _notify_change(self) -> None:
         async with asyncer.create_task_group() as tg:
             for callback in self._on_change_callbacks:
-                tg.soonify(callback)
+                tg.soonify(callback)(self)
 
     async def update_global(
         self, config: dict[str, Any], *, merge: bool = True
@@ -97,7 +99,7 @@ class ConfigurationMap:
         :param config: The configuration dict to merge for this scope
         """
 
-        self.scoped_configs.append(ScopeConfig(pattern=pattern, **config))
+        self.scoped_configs.append(ScopeConfig(pattern=pattern, config=config))
         await self._notify_change()
 
     def _get_section(self, config: Any, section: str | None) -> Any:
@@ -116,4 +118,6 @@ class ConfigurationMap:
         for scope_config in self.scoped_configs:
             if not fnmatch.fnmatch(path_str, scope_config.pattern):
                 continue
-            final_config = deep_merge(final_config, scope_config)
+            final_config = deep_merge(final_config, scope_config.config)
+
+        return self._get_section(final_config, section)

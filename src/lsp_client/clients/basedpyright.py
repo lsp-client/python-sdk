@@ -132,6 +132,21 @@ class BasedpyrightClient(
         https://github.com/detachhead/basedpyright#settings
         """
         return {
+            "python": {
+                "analysis": {
+                    "autoImportCompletions": True,
+                    "autoSearchPaths": True,
+                    "diagnosticMode": "openFilesOnly",
+                    "indexing": True,
+                    "typeCheckingMode": "recommended",
+                    "inlayHints": {
+                        "variableTypes": True,
+                        "functionReturnTypes": True,
+                        "callArgumentNames": True,
+                        "pytestParameters": True,
+                    },
+                }
+            },
             "basedpyright": {
                 "analysis": {
                     "autoImportCompletions": True,
@@ -146,5 +161,5 @@ class BasedpyrightClient(
                         "pytestParameters": True,
                     },
                 }
-            }
+            },
         }

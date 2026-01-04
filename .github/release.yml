@@ -28,3 +28,6 @@ changelog:
       labels:
         - test
         - testing
+    - title: "Other Changes"
+      labels:
+        - "*"

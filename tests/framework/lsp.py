@@ -522,23 +522,23 @@ class DocumentSymbolsAssertion:
         def check_symbols(
             symbols: Sequence[lsp_type.SymbolInformation]
             | Sequence[lsp_type.DocumentSymbol],
+            found_names: list[str],
         ) -> bool:
-            found_names = []
             for sym in symbols:
                 if isinstance(sym, lsp_type.DocumentSymbol):
                     found_names.append(f"{sym.name} ({sym.kind})")
                     if sym.name == name and (kind is None or sym.kind == kind):
                         return True
-                    if sym.children and check_symbols(sym.children):
+                    if sym.children and check_symbols(sym.children, found_names):
                         return True
                 elif isinstance(sym, lsp_type.SymbolInformation):
                     found_names.append(f"{sym.name} ({sym.kind})")
                     if sym.name == name and (kind is None or sym.kind == kind):
                         return True
-            self._last_found_names = found_names
             return False
 
-        if not check_symbols(self.response):
+        self._last_found_names = []
+        if not check_symbols(self.response, self._last_found_names):
             print(f"Actually found: {self._last_found_names}")
             assert False, f"Symbol '{name}' not found"
 

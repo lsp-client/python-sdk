@@ -36,6 +36,16 @@ from __future__ import annotations
 from loguru import logger
 
 from .client.abc import Client
+from .clients import (
+    BasedpyrightClient,
+    DenoClient,
+    GoplsClient,
+    PyreflyClient,
+    PyrightClient,
+    RustAnalyzerClient,
+    TyClient,
+    TypescriptClient,
+)
 from .server.abc import Server, StreamServer
 from .server.container import ContainerServer
 from .server.local import LocalServer
@@ -59,11 +69,19 @@ __pdoc__ = {
 }
 
 __all__ = [
+    "BasedpyrightClient",
     "Client",
     "ContainerServer",
+    "DenoClient",
+    "GoplsClient",
     "LocalServer",
+    "PyreflyClient",
+    "PyrightClient",
+    "RustAnalyzerClient",
     "Server",
     "StreamServer",
+    "TyClient",
+    "TypescriptClient",
     "disable_logging",
     "enable_logging",
 ]

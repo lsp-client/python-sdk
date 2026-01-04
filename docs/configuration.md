@@ -176,6 +176,13 @@ Each built-in client provides default configurations tailored to the language se
 - Diagnostics: Open files only
 - Auto-search paths and indexing: Enabled
 
+### Basedpyright (Python)
+- Inlay hints: Variable types, function return types, call arguments, pytest parameters
+- Auto-import completions: Enabled
+- Type checking mode: Recommended (can be overridden)
+- Diagnostics: Open files only
+- Auto-search paths and indexing: Enabled
+
 ### TypeScript Language Server
 - Inlay hints: All types for both TypeScript and JavaScript
 - Suggestions: Auto-imports, complete function calls, module exports

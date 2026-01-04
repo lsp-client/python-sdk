@@ -27,5 +27,8 @@ __all__ = [
     "DenoClient",
     "GoplsClient",
     "PyreflyClient",
+    "PyrightClient",
+    "RustAnalyzerClient",
     "TyClient",
+    "TypescriptClient",
 ]

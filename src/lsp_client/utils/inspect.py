@@ -32,6 +32,11 @@ class CapabilityInspectResult:
 async def inspect_capabilities(
     server: Server, client_cls: type[Client]
 ) -> AsyncGenerator[CapabilityInspectResult, None]:
+    """Inspect server capabilities and compare with client capabilities.
+
+    This function starts the server if it's not already running and sends
+    an initialize request to get server capabilities.
+    """
     if not __debug__:
         raise RuntimeError("inspect_capabilities can only be used in debug mode")
 
@@ -39,7 +44,6 @@ async def inspect_capabilities(
         channel[ServerRequest].create() as (sender, _),
         server.run(DEFAULT_WORKSPACE, sender=sender),
     ):
-        # send a fake initialize request to get server capabilities
         req = lsp_type.InitializeRequest(
             id="initialize",
             params=lsp_type.InitializeParams(

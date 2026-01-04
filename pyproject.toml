@@ -19,6 +19,7 @@ dependencies = [
     "attrs>=25.3.0",
     "loguru>=0.7.3",
     "lsprotocol>=2025.0.0",
+    "pydantic-settings>=2.12.0",
     "semver>=3.0.4",
     "tenacity>=9.1.2",
 ]

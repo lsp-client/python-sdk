@@ -12,6 +12,7 @@ from attrs import Factory, define, field
 from loguru import logger
 
 from lsp_client.env import disable_auto_installation
+from lsp_client.settings import settings
 from lsp_client.utils.workspace import Workspace
 
 from .abc import StreamServer
@@ -50,7 +51,7 @@ class LocalServer(StreamServer):
 
     cwd: Path = Factory(Path.cwd)
     env: dict[str, str] | None = None
-    shutdown_timeout: float = 5.0
+    shutdown_timeout: float = settings.shutdown_timeout
 
     ensure_installed: EnsureInstalledProtocol | None = None
 

@@ -31,6 +31,7 @@ from lsp_client.protocol import CapabilityClientProtocol, CapabilityProtocol
 from lsp_client.server import DefaultServers, ServerRuntimeError
 from lsp_client.server.abc import Server
 from lsp_client.server.types import ServerRequest
+from lsp_client.settings import settings
 from lsp_client.utils.channel import Receiver, channel
 from lsp_client.utils.config import ConfigurationMap
 from lsp_client.utils.types import AnyPath, Notification, Request, Response, lsp_type
@@ -82,7 +83,7 @@ class Client(
     sync_file: bool = True
     """Whether to sync file contents with the server."""
 
-    request_timeout: float = 5.0
+    request_timeout: float = settings.request_timeout
     """Timeout in seconds for JSON-RPC requests."""
 
     initialization_options: dict = field(factory=dict)

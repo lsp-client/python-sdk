@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
+from lsp_client.settings import settings
 
 
 def disable_auto_installation() -> bool:
-    return os.getenv("LSP_CLIENT_DISABLE_AUTO_INSTALLATION") is not None
+    return settings.disable_auto_installation

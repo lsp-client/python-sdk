@@ -11,6 +11,7 @@ from anyio.abc import AnyByteReceiveStream, AnyByteSendStream
 from attrs import Factory, define, field
 from loguru import logger
 
+from lsp_client.settings import settings
 from lsp_client.utils.workspace import Workspace
 
 from .abc import StreamServer
@@ -134,7 +135,7 @@ class ContainerServer(StreamServer):
     mounts: list[Mount] = Factory(list)
     """List of extra mounts to be mounted inside the container."""
 
-    backend: Literal["docker", "podman"] = "docker"
+    backend: Literal["docker", "podman"] = settings.container_backend
     """The container backend to use. Can be either `docker` or `podman`."""
 
     container_name: str | None = None

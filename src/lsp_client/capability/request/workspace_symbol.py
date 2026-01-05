@@ -21,17 +21,13 @@ class WithRequestWorkspaceSymbol(
 ):
     """
     - `workspace/symbol` - https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbol
-    - `workspace/symbolResolve` - https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbolResolve
     """
 
     @override
     @classmethod
     def iter_methods(cls) -> Iterator[str]:
         yield from super().iter_methods()
-        yield from (
-            lsp_type.WORKSPACE_SYMBOL,
-            lsp_type.WORKSPACE_SYMBOL_RESOLVE,
-        )
+        yield lsp_type.WORKSPACE_SYMBOL
 
     @override
     @classmethod
@@ -45,9 +41,6 @@ class WithRequestWorkspaceSymbol(
             ),
             tag_support=lsp_type.ClientSymbolTagOptions(
                 value_set=[*lsp_type.SymbolTag],
-            ),
-            resolve_support=lsp_type.ClientSymbolResolveOptions(
-                properties=["location.range", "location.uri"]
             ),
         )
 
@@ -76,34 +69,6 @@ class WithRequestWorkspaceSymbol(
         return await self._request_workspace_symbol(
             lsp_type.WorkspaceSymbolParams(query=query)
         )
-
-    async def _request_workspace_symbol_resolve(
-        self, params: lsp_type.WorkspaceSymbol
-    ) -> lsp_type.WorkspaceSymbol:
-        return await self.request(
-            lsp_type.WorkspaceSymbolResolveRequest(
-                id=jsonrpc_uuid(),
-                params=params,
-            ),
-            schema=lsp_type.WorkspaceSymbolResolveResponse,
-        )
-
-    async def request_workspace_symbol_resolve(
-        self, symbol: lsp_type.WorkspaceSymbol
-    ) -> lsp_type.WorkspaceSymbol:
-        return await self._request_workspace_symbol_resolve(symbol)
-
-    async def resolve_workspace_symbols(
-        self,
-        symbols: Sequence[lsp_type.WorkspaceSymbol],
-    ) -> Sequence[lsp_type.WorkspaceSymbol]:
-        tasks: list[asyncer.SoonValue[lsp_type.WorkspaceSymbol]] = []
-        async with asyncer.create_task_group() as tg:
-            tasks = [
-                tg.soonify(self.request_workspace_symbol_resolve)(symbol)
-                for symbol in symbols
-            ]
-        return [task.value for task in tasks]
 
     @deprecated("Use 'request_workspace_symbol_list' instead.")
     async def request_workspace_symbol_information_list(
@@ -135,7 +100,11 @@ class WithRequestWorkspaceSymbol(
             case result if is_workspace_symbols(result):
                 res = list(result)
                 if resolve:
-                    return await self.resolve_workspace_symbols(res)
+                    if isinstance(self, WithRequestWorkspaceSymbolResolve):
+                        return await self.resolve_workspace_symbols(res)
+                    logger.warning(
+                        "Resolve requested but client does not support 'WithRequestWorkspaceSymbolResolve'"
+                    )
                 return res
             case result if is_symbol_information_seq(result):
                 return [
@@ -158,3 +127,64 @@ class WithRequestWorkspaceSymbol(
                         "Workspace symbol returned with unexpected result: {}", other
                     )
                 return []
+
+
+@runtime_checkable
+class WithRequestWorkspaceSymbolResolve(
+    WorkspaceCapabilityProtocol,
+    CapabilityClientProtocol,
+    Protocol,
+):
+    """
+    - `workspace/symbolResolve` - https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_symbolResolve
+    """
+
+    @override
+    @classmethod
+    def iter_methods(cls) -> Iterator[str]:
+        yield from super().iter_methods()
+        yield lsp_type.WORKSPACE_SYMBOL_RESOLVE
+
+    @override
+    @classmethod
+    def register_workspace_capability(
+        cls, cap: lsp_type.WorkspaceClientCapabilities
+    ) -> None:
+        return
+
+    @override
+    @classmethod
+    def check_server_capability(cls, cap: lsp_type.ServerCapabilities) -> None:
+        super().check_server_capability(cap)
+        assert isinstance(
+            cap.workspace_symbol_provider, lsp_type.WorkspaceSymbolOptions
+        )
+        assert cap.workspace_symbol_provider.resolve_provider
+
+    async def _request_workspace_symbol_resolve(
+        self, params: lsp_type.WorkspaceSymbol
+    ) -> lsp_type.WorkspaceSymbol:
+        return await self.request(
+            lsp_type.WorkspaceSymbolResolveRequest(
+                id=jsonrpc_uuid(),
+                params=params,
+            ),
+            schema=lsp_type.WorkspaceSymbolResolveResponse,
+        )
+
+    async def request_workspace_symbol_resolve(
+        self, symbol: lsp_type.WorkspaceSymbol
+    ) -> lsp_type.WorkspaceSymbol:
+        return await self._request_workspace_symbol_resolve(symbol)
+
+    async def resolve_workspace_symbols(
+        self,
+        symbols: Sequence[lsp_type.WorkspaceSymbol],
+    ) -> Sequence[lsp_type.WorkspaceSymbol]:
+        tasks: list[asyncer.SoonValue[lsp_type.WorkspaceSymbol]] = []
+        async with asyncer.create_task_group() as tg:
+            tasks = [
+                tg.soonify(self.request_workspace_symbol_resolve)(symbol)
+                for symbol in symbols
+            ]
+        return [task.value for task in tasks]

@@ -108,27 +108,53 @@ class WithRequestWorkspaceSymbol(
     @deprecated("Use 'request_workspace_symbol_list' instead.")
     async def request_workspace_symbol_information_list(
         self, query: str
-    ) -> Sequence[lsp_type.SymbolInformation] | None:
+    ) -> Sequence[lsp_type.SymbolInformation]:
+        """
+        Request workspace symbols as a list of SymbolInformation.
+        Returns an empty list if the server returns WorkspaceSymbol or null.
+        """
         match await self.request_workspace_symbol(query):
             case result if is_symbol_information_seq(result):
                 return list(result)
             case other:
-                logger.warning(
-                    "Workspace symbol returned with unexpected result: {}", other
-                )
-                return None
+                if other is not None:
+                    logger.warning(
+                        "Workspace symbol returned with unexpected result: {}", other
+                    )
+                return []
 
     async def request_workspace_symbol_list(
         self, query: str, *, resolve: bool = False
-    ) -> Sequence[lsp_type.WorkspaceSymbol] | None:
+    ) -> Sequence[lsp_type.WorkspaceSymbol]:
+        """
+        Request workspace symbols as a list of WorkspaceSymbol.
+        Automatically converts SymbolInformation to WorkspaceSymbol if needed.
+        Returns an empty list if no results are found.
+        """
         match await self.request_workspace_symbol(query):
             case result if is_workspace_symbols(result):
                 res = list(result)
                 if resolve:
                     return await self.resolve_workspace_symbols(res)
                 return res
+            case result if is_symbol_information_seq(result):
+                return [
+                    lsp_type.WorkspaceSymbol(
+                        name=s.name,
+                        kind=s.kind,
+                        tags=list(s.tags)
+                        if s.tags
+                        else (
+                            [lsp_type.SymbolTag.Deprecated] if s.deprecated else None
+                        ),
+                        container_name=s.container_name,
+                        location=s.location,
+                    )
+                    for s in result
+                ]
             case other:
-                logger.warning(
-                    "Workspace symbol returned with unexpected result: {}", other
-                )
-                return None
+                if other is not None:
+                    logger.warning(
+                        "Workspace symbol returned with unexpected result: {}", other
+                    )
+                return []

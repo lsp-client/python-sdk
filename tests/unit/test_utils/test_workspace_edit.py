@@ -65,7 +65,7 @@ def test_apply_text_edits_single_line():
 
 
 def test_apply_text_edits_multiple_edits():
-    """Test applying multiple edits in reverse order."""
+    """Test applying multiple edits correctly regardless of input order."""
     content = "line 1\nline 2\nline 3\n"
     edits = [
         lsp_type.TextEdit(
@@ -132,8 +132,24 @@ def test_apply_text_edits_deletion():
         )
     ]
     result = apply_text_edits(content, edits)
-    # Deleting from character 5 to 16 removes " beautiful " (including surrounding spaces)
+    # Deleting from character 5 to 16 removes ' beautiful ' (space + 'beautiful' + space)
     assert result == "Helloworld\n"
+
+
+def test_apply_text_edits_snippet():
+    """Test applying SnippetTextEdit edits."""
+    content = "Hello world\n"
+    edits = [
+        lsp_type.SnippetTextEdit(
+            range=lsp_type.Range(
+                start=lsp_type.Position(line=0, character=6),
+                end=lsp_type.Position(line=0, character=11),
+            ),
+            snippet=lsp_type.StringValue(value="snippet"),
+        )
+    ]
+    result = apply_text_edits(content, edits)
+    assert result == "Hello snippet\n"
 
 
 @pytest.mark.asyncio
@@ -257,6 +273,25 @@ async def test_workspace_edit_applicator_changes_format():
 
     await applicator.apply_workspace_edit(edit)
     assert client._files["/test.py"] == "print('world')\n"
+
+
+@pytest.mark.asyncio
+async def test_workspace_edit_empty():
+    """Test applying an empty workspace edit."""
+    client = MockClient()
+    applicator = WorkspaceEditApplicator(client=client)
+
+    # Test with no document_changes and no changes
+    edit = lsp_type.WorkspaceEdit()
+    await applicator.apply_workspace_edit(edit)
+
+    # Test with empty document_changes
+    edit = lsp_type.WorkspaceEdit(document_changes=[])
+    await applicator.apply_workspace_edit(edit)
+
+    # Test with empty changes dict
+    edit = lsp_type.WorkspaceEdit(changes={})
+    await applicator.apply_workspace_edit(edit)
 
 
 @pytest.mark.asyncio
@@ -441,3 +476,86 @@ async def test_delete_directory_recursive():
 
         await applicator.apply_workspace_edit(edit)
         assert not await anyio.Path(dir_to_delete).exists()
+
+
+@pytest.mark.asyncio
+async def test_create_file_error_already_exists():
+    """Test CreateFile raises error when file already exists without overwrite."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        client = MockClient(temp_dir=temp_path)
+        applicator = WorkspaceEditApplicator(client=client)
+
+        existing_file = temp_path / "existing.txt"
+        await anyio.Path(existing_file).write_text("original content")
+
+        edit = lsp_type.WorkspaceEdit(
+            document_changes=[lsp_type.CreateFile(uri=existing_file.as_uri())]
+        )
+
+        with pytest.raises(EditApplicationError, match="already exists"):
+            await applicator.apply_workspace_edit(edit)
+
+
+@pytest.mark.asyncio
+async def test_rename_file_error_source_not_exists():
+    """Test RenameFile raises error when source file does not exist."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        client = MockClient(temp_dir=temp_path)
+        applicator = WorkspaceEditApplicator(client=client)
+
+        non_existent = temp_path / "non_existent.txt"
+        new_file = temp_path / "new.txt"
+        edit = lsp_type.WorkspaceEdit(
+            document_changes=[
+                lsp_type.RenameFile(
+                    old_uri=non_existent.as_uri(), new_uri=new_file.as_uri()
+                )
+            ]
+        )
+
+        with pytest.raises(EditApplicationError, match="does not exist"):
+            await applicator.apply_workspace_edit(edit)
+
+
+@pytest.mark.asyncio
+async def test_rename_file_error_target_exists():
+    """Test RenameFile raises error when target file exists without overwrite."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        client = MockClient(temp_dir=temp_path)
+        applicator = WorkspaceEditApplicator(client=client)
+
+        old_file = temp_path / "old.txt"
+        await anyio.Path(old_file).write_text("old content")
+        new_file = temp_path / "new.txt"
+        await anyio.Path(new_file).write_text("new content")
+
+        edit = lsp_type.WorkspaceEdit(
+            document_changes=[
+                lsp_type.RenameFile(
+                    old_uri=old_file.as_uri(), new_uri=new_file.as_uri()
+                )
+            ]
+        )
+
+        with pytest.raises(EditApplicationError, match="already exists"):
+            await applicator.apply_workspace_edit(edit)
+
+
+@pytest.mark.asyncio
+async def test_delete_file_error_not_exists():
+    """Test DeleteFile raises error when file does not exist."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        client = MockClient(temp_dir=temp_path)
+        applicator = WorkspaceEditApplicator(client=client)
+
+        non_existent = temp_path / "non_existent.txt"
+        edit = lsp_type.WorkspaceEdit(
+            document_changes=[lsp_type.DeleteFile(uri=non_existent.as_uri())]
+        )
+
+        with pytest.raises(EditApplicationError, match="does not exist"):
+            await applicator.apply_workspace_edit(edit)

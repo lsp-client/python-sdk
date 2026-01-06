@@ -62,8 +62,9 @@ def apply_text_edits(
         Updated content after applying all edits
 
     Note:
-        Edits must be sorted in reverse order (last to first) to maintain
-        correct positions during application.
+        Edits can be provided in any order. They are automatically sorted in
+        reverse order (last to first) to maintain correct positions during
+        application.
     """
     lines = content.splitlines(keepends=True)
 

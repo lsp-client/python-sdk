@@ -43,7 +43,12 @@ class DocumentStateManager:
             uri: Document URI
             content: Initial document content
             version: Initial version (defaults to 0)
+
+        Raises:
+            KeyError: If the document URI is already registered
         """
+        if uri in self._states:
+            raise KeyError(f"Document {uri} is already registered in state manager")
         self._states[uri] = DocumentState(content=content, version=version)
 
     def unregister(self, uri: str) -> None:
@@ -52,8 +57,14 @@ class DocumentStateManager:
 
         Args:
             uri: Document URI
+
+        Raises:
+            KeyError: If document URI is not registered
         """
-        self._states.pop(uri, None)
+        if uri in self._states:
+            del self._states[uri]
+            return
+        raise KeyError(f"Document {uri} not found in state manager")
 
     def get_version(self, uri: str) -> int:
         """

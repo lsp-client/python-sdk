@@ -83,3 +83,20 @@ def test_update_content_nonexistent():
     manager = DocumentStateManager()
     with pytest.raises(KeyError, match=r"Document .* not found"):
         manager.update_content("file:///nonexistent.py", "new content")
+
+
+def test_register_document_twice():
+    """Test that registering a document twice raises KeyError."""
+    manager = DocumentStateManager()
+    manager.register("file:///test.py", "print('hello')", version=0)
+
+    with pytest.raises(KeyError, match=r"Document .* is already registered"):
+        manager.register("file:///test.py", "print('world')", version=0)
+
+
+def test_unregister_nonexistent_document():
+    """Test that unregistering a non-existent document raises KeyError."""
+    manager = DocumentStateManager()
+
+    with pytest.raises(KeyError, match=r"Document .* not found"):
+        manager.unregister("file:///nonexistent.py")

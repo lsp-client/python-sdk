@@ -11,6 +11,9 @@ from loguru import logger
 
 from lsp_client.capability.notification import (
     WithNotifyDidChangeConfiguration,
+    WithNotifyDidCreateFiles,
+    WithNotifyDidDeleteFiles,
+    WithNotifyDidRenameFiles,
 )
 from lsp_client.capability.request import (
     WithDocumentDiagnostic,
@@ -26,6 +29,9 @@ from lsp_client.capability.request import (
     WithRequestReferences,
     WithRequestSignatureHelp,
     WithRequestTypeDefinition,
+    WithRequestWillCreateFiles,
+    WithRequestWillDeleteFiles,
+    WithRequestWillRenameFiles,
     WithRequestWorkspaceSymbol,
 )
 from lsp_client.capability.server_notification import (
@@ -80,6 +86,9 @@ RustAnalyzerLocalServer = partial(
 class RustAnalyzerClient(
     RustClientBase,
     WithNotifyDidChangeConfiguration,
+    WithNotifyDidCreateFiles,
+    WithNotifyDidRenameFiles,
+    WithNotifyDidDeleteFiles,
     WithRequestCallHierarchy,
     WithRequestCodeAction,
     WithRequestCompletion,
@@ -93,6 +102,9 @@ class RustAnalyzerClient(
     WithRequestReferences,
     WithRequestSignatureHelp,
     WithRequestTypeDefinition,
+    WithRequestWillCreateFiles,
+    WithRequestWillRenameFiles,
+    WithRequestWillDeleteFiles,
     WithRequestWorkspaceSymbol,
     WithReceiveLogMessage,
     WithReceiveLogTrace,

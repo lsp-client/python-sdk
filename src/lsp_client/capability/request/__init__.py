@@ -19,6 +19,9 @@ from .rename import WithRequestRename
 from .signature_help import WithRequestSignatureHelp
 from .type_definition import WithRequestTypeDefinition
 from .type_hierarchy import WithRequestTypeHierarchy
+from .will_create_files import WithRequestWillCreateFiles
+from .will_delete_files import WithRequestWillDeleteFiles
+from .will_rename_files import WithRequestWillRenameFiles
 from .workspace_symbol import WithRequestWorkspaceSymbol
 
 capabilities: Final = (
@@ -38,6 +41,9 @@ capabilities: Final = (
     WithRequestSignatureHelp,
     WithRequestTypeDefinition,
     WithRequestTypeHierarchy,
+    WithRequestWillCreateFiles,
+    WithRequestWillRenameFiles,
+    WithRequestWillDeleteFiles,
     WithWorkspaceDiagnostic,
     WithRequestWorkspaceSymbol,
 )
@@ -59,6 +65,9 @@ __all__ = [
     "WithRequestSignatureHelp",
     "WithRequestTypeDefinition",
     "WithRequestTypeHierarchy",
+    "WithRequestWillCreateFiles",
+    "WithRequestWillDeleteFiles",
+    "WithRequestWillRenameFiles",
     "WithRequestWorkspaceSymbol",
     "WithWorkspaceDiagnostic",
     "capabilities",

@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-from lsprotocol.types import Position
+from lsprotocol.types import Position, SnippetTextEdit, TextDocumentEdit
 
 from lsp_client.clients import PyrightClient
 
@@ -42,14 +42,24 @@ async def preview_rename_example():
             # Modern format with versioning
             for change in edits.document_changes:
                 match change:
-                    case {"textDocument": {"uri": uri}, "edits": text_edits}:
+                    case TextDocumentEdit(text_document=doc, edits=text_edits):
+                        uri = doc.uri
                         print(f"  {uri}: {len(text_edits)} changes")
                         for edit in text_edits:
+                            # Extract range and new text
                             start = edit.range.start
                             end = edit.range.end
+
+                            match edit:
+                                case SnippetTextEdit(snippet=snippet):
+                                    new_text = snippet.value
+                                case _:
+                                    # TextEdit or AnnotatedTextEdit
+                                    new_text = edit.new_text
+
                             print(
                                 f"    Line {start.line}:{start.character}-"
-                                f"{end.line}:{end.character} -> '{edit.new_text}'"
+                                f"{end.line}:{end.character} -> '{new_text}'"
                             )
         elif edits.changes:
             # Legacy format

@@ -98,9 +98,6 @@ def apply_text_edits(
                 + start_line_content[end_char:]
             )
             lines[start_line] = new_line
-            # Remove any lines that were part of the range
-            if end_line + 1 < len(lines):
-                del lines[start_line + 1 : end_line + 1]
         else:
             # Multi-line edit
             new_line = (

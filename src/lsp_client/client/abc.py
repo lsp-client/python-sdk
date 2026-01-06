@@ -203,7 +203,34 @@ class Client(
                     tg.soonify(self.notify_text_document_closed)(item.file_path)
 
     async def write_file(self, uri: str, content: str) -> None:
-        """Write file content by URI."""
+        """Write the given text content to a file identified by a local file URI.
+
+        This resolves the provided ``uri`` to a local filesystem path using
+        :func:`from_local_uri` and writes ``content`` to that path, replacing any
+        existing file contents. The write is performed asynchronously via
+        :class:`anyio.Path`.
+
+        Parameters
+        ----------
+        uri:
+            The local file URI of the target document to write to. It must be a
+            URI that :func:`from_local_uri` can resolve to a filesystem path.
+        content:
+            The full text content to be written to the target file.
+
+        Raises
+        ------
+        OSError
+            If writing to the underlying filesystem fails (for example due to
+            permission issues, missing directories, or other I/O errors).
+
+        Notes
+        -----
+        This method only updates the on-disk file and does **not** modify the
+        in-memory document state or buffer (for example, ``DocumentStateManager``
+        or ``LSPFileBuffer``). Callers are responsible for keeping any such
+        in-memory representations in sync with the written content.
+        """
         path = from_local_uri(uri)
         await anyio.Path(path).write_text(content)
 

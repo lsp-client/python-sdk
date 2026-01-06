@@ -14,6 +14,9 @@ class EditApplicationError(LSPError):
     message: str
     uri: str | None = None
 
+    def __str__(self) -> str:
+        return self.message
+
 
 @frozen
 class VersionMismatchError(EditApplicationError):
@@ -21,5 +24,3 @@ class VersionMismatchError(EditApplicationError):
 
     expected_version: int | None = None
     actual_version: int | None = None
-    message: str = ""
-    uri: str | None = None

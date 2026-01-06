@@ -136,9 +136,60 @@ class TestCapabilityMixins:
     def test_server_request_capabilities_exist(self):
         """Test that server request capability mixins exist."""
         from lsp_client.capability.server_request import (
+            WithRespondApplyEdit,
             WithRespondConfigurationRequest,
             WithRespondWorkspaceFoldersRequest,
         )
 
+        assert WithRespondApplyEdit is not None
         assert WithRespondConfigurationRequest is not None
         assert WithRespondWorkspaceFoldersRequest is not None
+
+
+class TestWithRespondApplyEdit:
+    """Tests for WithRespondApplyEdit capability."""
+
+    def test_capability_imports(self):
+        """Test that WithRespondApplyEdit can be imported."""
+        from lsp_client.capability.server_request import WithRespondApplyEdit
+
+        assert WithRespondApplyEdit is not None
+
+    def test_capability_registers_workspace_capability(self):
+        """Test that WithRespondApplyEdit registers workspace capabilities."""
+        from lsp_client.capability.server_request import WithRespondApplyEdit
+        from lsp_client.utils.types import lsp_type
+
+        cap = lsp_type.WorkspaceClientCapabilities()
+        WithRespondApplyEdit.register_workspace_capability(cap)
+
+        # Check that applyEdit is enabled
+        assert cap.apply_edit is True
+
+        # Check that workspace_edit capabilities are set
+        assert cap.workspace_edit is not None
+        assert cap.workspace_edit.document_changes is True
+
+        # Check that resource operations are advertised
+        assert cap.workspace_edit.resource_operations is not None
+        assert lsp_type.ResourceOperationKind.Create in cap.workspace_edit.resource_operations
+        assert lsp_type.ResourceOperationKind.Rename in cap.workspace_edit.resource_operations
+        assert lsp_type.ResourceOperationKind.Delete in cap.workspace_edit.resource_operations
+
+        # Check failure handling
+        assert cap.workspace_edit.failure_handling == lsp_type.FailureHandlingKind.Undo
+
+    def test_capability_iterates_methods(self):
+        """Test that WithRespondApplyEdit includes workspace/applyEdit in methods."""
+        from lsp_client.capability.server_request import WithRespondApplyEdit
+        from lsp_client.utils.types import lsp_type
+
+        methods = list(WithRespondApplyEdit.iter_methods())
+        assert lsp_type.WORKSPACE_APPLY_EDIT in methods
+
+    def test_capability_is_protocol(self):
+        """Test that WithRespondApplyEdit is a runtime checkable protocol."""
+        from lsp_client.capability.server_request import WithRespondApplyEdit
+
+        # Verify it's a runtime_checkable protocol
+        assert hasattr(WithRespondApplyEdit, "__subclasshook__")

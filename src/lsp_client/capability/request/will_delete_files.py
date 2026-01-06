@@ -6,17 +6,15 @@ from typing import Protocol, override, runtime_checkable
 from lsp_client.jsonrpc.id import jsonrpc_uuid
 from lsp_client.protocol import CapabilityClientProtocol, WorkspaceCapabilityProtocol
 from lsp_client.utils.types import lsp_type
-from lsp_client.utils.workspace_edit import (
-    DocumentEditProtocol,
-    WorkspaceEditApplicator,
-)
+
+from ._workspace_edit_mixin import WithApplyWorkspaceEdit
 
 
 @runtime_checkable
 class WithRequestWillDeleteFiles(
     WorkspaceCapabilityProtocol,
     CapabilityClientProtocol,
-    DocumentEditProtocol,
+    WithApplyWorkspaceEdit,
     Protocol,
 ):
     """
@@ -75,13 +73,3 @@ class WithRequestWillDeleteFiles(
                 files=[lsp_type.FileDelete(uri=uri) for uri in uris]
             )
         )
-
-    async def apply_workspace_edit(self, edit: lsp_type.WorkspaceEdit) -> None:
-        """
-        Apply workspace edit to documents.
-
-        Args:
-            edit: Workspace edit to apply
-        """
-        applicator = WorkspaceEditApplicator(client=self)
-        await applicator.apply_workspace_edit(edit)

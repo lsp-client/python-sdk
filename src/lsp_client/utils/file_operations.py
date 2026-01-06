@@ -18,10 +18,23 @@ async def create_files_with_server(client: Client, uris: list[str]) -> None:
     """
     Create files with full LSP integration.
 
+    This operation is not atomic. If interrupted between steps, the workspace
+    may be left in an inconsistent state. Consider implementing error handling
+    and rollback mechanisms for critical operations.
+
     1. Call willCreateFiles to get edits
     2. Apply workspace edits
     3. Create the files (if they don't exist)
     4. Call didCreateFiles notification
+
+    Args:
+        client: LSP client instance
+        uris: List of file URIs to create
+
+    Raises:
+        EditApplicationError: If workspace edit cannot be applied
+        OSError: If file system operations fail (e.g., permissions, disk full)
+        ValueError: If URIs are invalid
     """
     if isinstance(client, WithRequestWillCreateFiles):
         c = cast(WithRequestWillCreateFiles, client)
@@ -46,10 +59,23 @@ async def rename_files_with_server(
     """
     Rename files with full LSP integration.
 
+    This operation is not atomic. If interrupted between steps, the workspace
+    may be left in an inconsistent state. Consider implementing error handling
+    and rollback mechanisms for critical operations.
+
     1. Call willRenameFiles to get edits
     2. Apply workspace edits
     3. Rename the files
     4. Call didRenameFiles notification
+
+    Args:
+        client: LSP client instance
+        file_renames: List of (old_uri, new_uri) tuples
+
+    Raises:
+        EditApplicationError: If workspace edit cannot be applied
+        OSError: If file system operations fail (e.g., permissions, disk full)
+        ValueError: If URIs are invalid
     """
     if isinstance(client, WithRequestWillRenameFiles):
         c = cast(WithRequestWillRenameFiles, client)
@@ -74,10 +100,23 @@ async def delete_files_with_server(client: Client, uris: list[str]) -> None:
     """
     Delete files with full LSP integration.
 
+    This operation is not atomic. If interrupted between steps, the workspace
+    may be left in an inconsistent state. Consider implementing error handling
+    and rollback mechanisms for critical operations.
+
     1. Call willDeleteFiles to get edits
     2. Apply workspace edits
     3. Delete the files
     4. Call didDeleteFiles notification
+
+    Args:
+        client: LSP client instance
+        uris: List of file URIs to delete
+
+    Raises:
+        EditApplicationError: If workspace edit cannot be applied
+        OSError: If file system operations fail (e.g., permissions, disk full)
+        ValueError: If URIs are invalid
     """
     if isinstance(client, WithRequestWillDeleteFiles):
         c = cast(WithRequestWillDeleteFiles, client)
@@ -91,7 +130,7 @@ async def delete_files_with_server(client: Client, uris: list[str]) -> None:
             if await path.is_dir():
                 import shutil
 
-                shutil.rmtree(path)
+                await anyio.to_thread.run_sync(shutil.rmtree, str(path))
             else:
                 await path.unlink()
 

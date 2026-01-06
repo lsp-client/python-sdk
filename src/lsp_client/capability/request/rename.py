@@ -6,17 +6,15 @@ from typing import Protocol, override, runtime_checkable
 from lsp_client.jsonrpc.id import jsonrpc_uuid
 from lsp_client.protocol import CapabilityClientProtocol, TextDocumentCapabilityProtocol
 from lsp_client.utils.types import AnyPath, Position, lsp_type
-from lsp_client.utils.workspace_edit import (
-    DocumentEditProtocol,
-    WorkspaceEditApplicator,
-)
+
+from ._workspace_edit_mixin import WithApplyWorkspaceEdit
 
 
 @runtime_checkable
 class WithRequestRename(
     TextDocumentCapabilityProtocol,
     CapabilityClientProtocol,
-    DocumentEditProtocol,
+    WithApplyWorkspaceEdit,
     Protocol,
 ):
     """
@@ -128,32 +126,6 @@ class WithRequestRename(
                     new_name=new_name,
                 )
             )
-
-    async def apply_workspace_edit(self, edit: lsp_type.WorkspaceEdit) -> None:
-        """
-        Apply workspace edit to documents.
-
-        This is a helper method that provides a convenient way to apply
-        workspace edits returned from request_rename_edits().
-
-        Args:
-            edit: Workspace edit to apply
-
-        Raises:
-            EditApplicationError: If edit cannot be applied
-            OSError: If file I/O operations fail
-
-        Example:
-            >>> edits = await client.request_rename_edits(file, pos, "new_name")
-            >>> if edits:
-            >>>     try:
-            >>>         await client.apply_workspace_edit(edits)
-            >>>         print("Changes applied")
-            >>>     except EditApplicationError as e:
-            >>>         print(f"Failed: {e.message}")
-        """
-        applicator = WorkspaceEditApplicator(client=self)
-        await applicator.apply_workspace_edit(edit)
 
     async def request_rename(
         self, file_path: AnyPath, position: Position, new_name: str

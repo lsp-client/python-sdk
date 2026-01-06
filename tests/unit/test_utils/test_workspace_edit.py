@@ -280,15 +280,15 @@ async def test_workspace_edit_empty():
     """Test applying an empty workspace edit."""
     client = MockClient()
     applicator = WorkspaceEditApplicator(client=client)
-    
+
     # Test with no document_changes and no changes
     edit = lsp_type.WorkspaceEdit()
     await applicator.apply_workspace_edit(edit)
-    
+
     # Test with empty document_changes
     edit = lsp_type.WorkspaceEdit(document_changes=[])
     await applicator.apply_workspace_edit(edit)
-    
+
     # Test with empty changes dict
     edit = lsp_type.WorkspaceEdit(changes={})
     await applicator.apply_workspace_edit(edit)

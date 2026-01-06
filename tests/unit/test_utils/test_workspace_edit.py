@@ -116,7 +116,7 @@ def test_apply_text_edits_deletion():
         )
     ]
     result = apply_text_edits(content, edits)
-    # Deleting from character 5 to 16 removes " beautiful"
+    # Deleting from character 5 to 16 removes " beautiful " (including surrounding spaces)
     assert result == "Helloworld\n"
 
 

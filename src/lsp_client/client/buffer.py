@@ -28,7 +28,6 @@ class LSPFileBufferItem:
     Properties:
         file_path: Local filesystem Path derived from the URI
         content: Decoded UTF-8 string content
-        version: Current document version (always 0 if text editing not supported)
 
     Example:
         item = LSPFileBufferItem(file_uri="file:///test.py", file_content=b"print('hello')")
@@ -46,11 +45,6 @@ class LSPFileBufferItem:
     @cached_property
     def content(self) -> str:
         return self.file_content.decode("utf-8")
-
-    @property
-    def version(self) -> int:
-        # TODO when text editing is supported, this should be updated
-        return 0
 
 
 @define

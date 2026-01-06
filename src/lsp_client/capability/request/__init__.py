@@ -15,6 +15,7 @@ from .implementation import WithRequestImplementation
 from .inlay_hint import WithRequestInlayHint
 from .inline_value import WithRequestInlineValue
 from .reference import WithRequestReferences
+from .rename import WithRequestRename
 from .signature_help import WithRequestSignatureHelp
 from .type_definition import WithRequestTypeDefinition
 from .type_hierarchy import WithRequestTypeHierarchy
@@ -33,6 +34,7 @@ capabilities: Final = (
     WithRequestInlineValue,
     WithDocumentDiagnostic,
     WithRequestReferences,
+    WithRequestRename,
     WithRequestSignatureHelp,
     WithRequestTypeDefinition,
     WithRequestTypeHierarchy,
@@ -53,6 +55,7 @@ __all__ = [
     "WithRequestInlayHint",
     "WithRequestInlineValue",
     "WithRequestReferences",
+    "WithRequestRename",
     "WithRequestSignatureHelp",
     "WithRequestTypeDefinition",
     "WithRequestTypeHierarchy",

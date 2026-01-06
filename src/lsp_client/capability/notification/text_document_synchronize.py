@@ -57,12 +57,13 @@ class WithNotifyTextDocumentSynchronize(
     async def notify_text_document_opened(
         self, file_path: AnyPath, file_content: str
     ) -> None:
+        uri = self.as_uri(file_path)
         return await self._notify_text_document_opened(
             lsp_type.DidOpenTextDocumentParams(
                 text_document=lsp_type.TextDocumentItem(
-                    uri=self.as_uri(file_path),
+                    uri=uri,
                     language_id=self.get_language_config().kind,
-                    version=0,  # Version 0 for the initial open
+                    version=0,
                     text=file_content,
                 )
             )

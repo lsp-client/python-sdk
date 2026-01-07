@@ -149,10 +149,19 @@ class WithRequestRename(
             EditApplicationError: If rename edit cannot be applied
             OSError: If file I/O operations fail
         """
-        workspace_edit = await self.request_rename_edits(file_path, position, new_name)
+        async with self.open_files(file_path):
+            workspace_edit = await self._request_rename(
+                lsp_type.RenameParams(
+                    text_document=lsp_type.TextDocumentIdentifier(
+                        uri=self.as_uri(file_path)
+                    ),
+                    position=position,
+                    new_name=new_name,
+                )
+            )
 
-        if workspace_edit is None:
-            return False
+            if workspace_edit is None:
+                return False
 
-        await self.apply_workspace_edit(workspace_edit)
-        return True
+            await self.apply_workspace_edit(workspace_edit)
+            return True

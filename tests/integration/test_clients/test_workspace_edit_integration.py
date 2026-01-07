@@ -32,6 +32,9 @@ class MockLSPClient(WithRespondApplyEdit):
         )
         self._config_map = ConfigurationMap({})
 
+    def get_document_state(self) -> DocumentStateManager:
+        return self.document_state
+
     async def read_file(self, file_path: AnyPath) -> str:
         if self._temp_dir:
             path = anyio.Path(file_path)

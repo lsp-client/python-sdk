@@ -201,8 +201,9 @@ class WorkspaceEditApplicator:
         new_content = apply_text_edits(content, edit.edits)
         await self.client.write_file(uri, new_content)
 
-        # Update document state
-        _ = self.client.get_document_state().update_content(uri, new_content)
+        # Update document state if tracked
+        with suppress(KeyError):
+            _ = self.client.get_document_state().update_content(uri, new_content)
 
     async def _apply_changes(
         self, changes: Mapping[str, Sequence[lsp_type.TextEdit]]

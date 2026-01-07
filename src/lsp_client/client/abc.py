@@ -192,16 +192,17 @@ class Client(
         buffer_items = await self._buffer.open(file_uris)
         async with asyncer.create_task_group() as tg:
             for item in buffer_items:
-                self.document_state.register(item.file_uri, item.content, version=0)
-                tg.soonify(self.notify_text_document_opened)(
-                    file_path=item.file_path,
-                    file_content=item.content,
-                )
+                if item.file_uri not in self.document_state._states:
+                    self.document_state.register(item.file_uri, item.content, version=0)
+                    tg.soonify(self.notify_text_document_opened)(
+                        file_path=item.file_path,
+                        file_content=item.content,
+                    )
 
         try:
             yield
         finally:
-            closed_items = self._buffer.close(item.file_uri for item in buffer_items)
+            closed_items = self._buffer.close(file_uris)
 
             async with asyncer.create_task_group() as tg:
                 for item in closed_items:

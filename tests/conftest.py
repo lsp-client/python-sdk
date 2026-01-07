@@ -8,6 +8,12 @@ from lsp_client.client.abc import Client
 
 
 @pytest.fixture
+def anyio_backend():
+    """Specify the backend for AnyIO tests."""
+    return "asyncio"
+
+
+@pytest.fixture
 def lsp_client(client_cls: type[Client]):
     """Create a client instance for testing."""
     return client_cls()

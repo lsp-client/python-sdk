@@ -14,6 +14,7 @@ from typing import Protocol, runtime_checkable
 
 import anyio
 
+from lsp_client.client.document_state import DocumentStateManager
 from lsp_client.utils.config import ConfigurationMap
 from lsp_client.utils.types import AnyPath, Notification, Request, Response
 from lsp_client.utils.uri import from_local_uri
@@ -23,7 +24,26 @@ from .lang import LanguageConfig
 
 
 @runtime_checkable
-class CapabilityClientProtocol(Protocol):
+class DocumentEditProtocol(Protocol):
+    """Protocol for objects that can apply document edits."""
+
+    document_state: DocumentStateManager
+
+    async def read_file(self, file_path: AnyPath) -> str:
+        """Read file content by path."""
+        ...
+
+    async def write_file(self, uri: str, content: str) -> None:
+        """Write file content by URI."""
+        ...
+
+    def from_uri(self, uri: str, *, relative: bool = True) -> Path:
+        """Convert a URI to a path."""
+        ...
+
+
+@runtime_checkable
+class CapabilityClientProtocol(DocumentEditProtocol, Protocol):
     """
     Minimal interface for a client to perform LSP operations.
     """

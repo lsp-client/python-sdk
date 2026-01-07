@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from lsp_client.protocol import DocumentEditProtocol
 from lsp_client.utils.types import lsp_type
-from lsp_client.utils.workspace_edit import (
-    DocumentEditProtocol,
-    WorkspaceEditApplicator,
-)
+from lsp_client.utils.workspace_edit import WorkspaceEditApplicator
 
 
 @runtime_checkable

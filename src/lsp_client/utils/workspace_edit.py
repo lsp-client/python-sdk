@@ -3,41 +3,20 @@ from __future__ import annotations
 import shutil
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import suppress
-from pathlib import Path
-from typing import Protocol, runtime_checkable
 
 import anyio
 import anyio.to_thread
 from attrs import define
 from loguru import logger
 
-from lsp_client.client.document_state import DocumentStateManager
 from lsp_client.exception import EditApplicationError, VersionMismatchError
+from lsp_client.protocol import DocumentEditProtocol
 from lsp_client.utils.types import lsp_type
 from lsp_client.utils.uri import from_local_uri
 
 type AnyTextEdit = (
     lsp_type.TextEdit | lsp_type.AnnotatedTextEdit | lsp_type.SnippetTextEdit
 )
-
-
-@runtime_checkable
-class DocumentEditProtocol(Protocol):
-    """Protocol for objects that can apply document edits."""
-
-    document_state: DocumentStateManager
-
-    async def read_file(self, file_path: str | Path) -> str:
-        """Read file content by path."""
-        ...
-
-    async def write_file(self, uri: str, content: str) -> None:
-        """Write file content by URI."""
-        ...
-
-    def from_uri(self, uri: str, *, relative: bool = True) -> Path:
-        """Convert a URI to a path."""
-        ...
 
 
 def get_edit_text(edit: AnyTextEdit) -> str:

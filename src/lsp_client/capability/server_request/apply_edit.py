@@ -8,16 +8,14 @@ from loguru import logger
 from lsp_client.exception import EditApplicationError
 from lsp_client.protocol import (
     CapabilityClientProtocol,
+    DocumentEditProtocol,
     ServerRequestHook,
     ServerRequestHookProtocol,
     ServerRequestHookRegistry,
     WorkspaceCapabilityProtocol,
 )
 from lsp_client.utils.types import lsp_type
-from lsp_client.utils.workspace_edit import (
-    DocumentEditProtocol,
-    WorkspaceEditApplicator,
-)
+from lsp_client.utils.workspace_edit import WorkspaceEditApplicator
 
 
 @runtime_checkable

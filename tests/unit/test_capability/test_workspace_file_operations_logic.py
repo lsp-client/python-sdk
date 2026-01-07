@@ -20,7 +20,7 @@ class MockClient:
         self.notify_mock = AsyncMock()
         self.get_workspace_mock = MagicMock()
         self.get_config_map_mock = MagicMock()
-        self._document_state = MagicMock()
+        self.document_state = MagicMock()
 
     def get_workspace(self):
         return self.get_workspace_mock()

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import shutil
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import suppress
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 import anyio
+import anyio.to_thread
 from attrs import define
 from loguru import logger
 
@@ -15,12 +16,16 @@ from lsp_client.exception import EditApplicationError, VersionMismatchError
 from lsp_client.utils.types import lsp_type
 from lsp_client.utils.uri import from_local_uri
 
+type AnyTextEdit = (
+    lsp_type.TextEdit | lsp_type.AnnotatedTextEdit | lsp_type.SnippetTextEdit
+)
+
 
 @runtime_checkable
 class DocumentEditProtocol(Protocol):
     """Protocol for objects that can apply document edits."""
 
-    _document_state: DocumentStateManager
+    document_state: DocumentStateManager
 
     async def read_file(self, file_path: str | Path) -> str:
         """Read file content by path."""
@@ -35,22 +40,17 @@ class DocumentEditProtocol(Protocol):
         ...
 
 
-def _get_edit_text(
-    edit: lsp_type.TextEdit | lsp_type.AnnotatedTextEdit | lsp_type.SnippetTextEdit,
-) -> str:
+def get_edit_text(edit: AnyTextEdit) -> str:
     """Extract text from different edit types."""
-    if isinstance(edit, lsp_type.SnippetTextEdit):
-        # For SnippetTextEdit, use the snippet as plain text
-        return edit.snippet.value
-    return edit.new_text
+    match edit:
+        case lsp_type.SnippetTextEdit(snippet=snippet):
+            # For SnippetTextEdit, use the snippet as plain text
+            return snippet.value
+        case _:
+            return edit.new_text
 
 
-def apply_text_edits(
-    content: str,
-    edits: Sequence[
-        lsp_type.TextEdit | lsp_type.AnnotatedTextEdit | lsp_type.SnippetTextEdit
-    ],
-) -> str:
+def apply_text_edits(content: str, edits: Sequence[AnyTextEdit]) -> str:
     """
     Apply a list of text edits to content.
 
@@ -74,7 +74,7 @@ def apply_text_edits(
     )
 
     for edit in sorted_edits:
-        new_text = _get_edit_text(edit)
+        new_text = get_edit_text(edit)
         start_line = edit.range.start.line
         start_char = edit.range.start.character
         end_line = edit.range.end.line
@@ -113,6 +113,32 @@ def apply_text_edits(
                 del lines[start_line + 1 : end_line + 1]
 
     return "".join(lines)
+
+
+def iter_text_document_edits(
+    edit: lsp_type.WorkspaceEdit,
+) -> Iterator[tuple[str, Sequence[AnyTextEdit]]]:
+    """
+    Iterate over text document edits in a WorkspaceEdit.
+
+    This helper unifies the two formats of WorkspaceEdit:
+    1. documentChanges (modern, supports resource operations)
+    2. changes (legacy, URI to TextEdit[] mapping)
+
+    Returns:
+        Iterator of (uri, edits) tuples
+    """
+    if edit.document_changes:
+        for change in edit.document_changes:
+            match change:
+                case lsp_type.TextDocumentEdit(
+                    text_document=text_document, edits=edits
+                ):
+                    yield text_document.uri, edits
+                case _:
+                    continue
+    elif edit.changes:
+        yield from edit.changes.items()
 
 
 @define
@@ -172,7 +198,7 @@ class WorkspaceEditApplicator:
         # Validate version if specified
         if expected_version is not None:
             try:
-                actual_version = self.client._document_state.get_version(uri)
+                actual_version = self.client.document_state.get_version(uri)
             except KeyError as e:
                 raise EditApplicationError(
                     message=f"Document {uri} not open in client",
@@ -197,7 +223,7 @@ class WorkspaceEditApplicator:
         await self.client.write_file(uri, new_content)
 
         # Update document state
-        self.client._document_state.update_content(uri, new_content)
+        _ = self.client.document_state.update_content(uri, new_content)
 
     async def _apply_changes(
         self, changes: Mapping[str, Sequence[lsp_type.TextEdit]]
@@ -212,7 +238,7 @@ class WorkspaceEditApplicator:
 
             # Update document state if tracked
             with suppress(KeyError):
-                self.client._document_state.update_content(uri, new_content)
+                _ = self.client.document_state.update_content(uri, new_content)
 
     async def _apply_create_file(self, change: lsp_type.CreateFile) -> None:
         """Apply CreateFile resource operation."""
@@ -221,23 +247,21 @@ class WorkspaceEditApplicator:
         file_path = anyio.Path(path)
 
         # Check if file exists
-        exists = await file_path.exists()
-
-        if exists:
-            if change.options and change.options.overwrite:
+        if await file_path.exists():
+            options = change.options
+            if options and options.overwrite:
                 # Overwrite is allowed, continue
                 pass
-            elif change.options and change.options.ignore_if_exists:
+            elif options and options.ignore_if_exists:
                 # Ignore the create operation
                 logger.debug(
-                    f"Skipping CreateFile for {uri}: "
-                    "file exists and ignoreIfExists is true"
+                    f"Skipping CreateFile for {uri}: file exists and ignoreIfExists is true"
                 )
                 return
             else:
                 # Default behavior: fail if file exists
                 raise EditApplicationError(
-                    message=(f"File {uri} already exists and overwrite is not allowed"),
+                    message=f"File {uri} already exists and overwrite is not allowed",
                     uri=uri,
                 )
 
@@ -247,7 +271,7 @@ class WorkspaceEditApplicator:
             await parent.mkdir(parents=True, exist_ok=True)
 
         # Create the file
-        await file_path.write_text("")
+        _ = await file_path.write_text("")
         logger.debug(f"Created file: {uri}")
 
     async def _apply_rename_file(self, change: lsp_type.RenameFile) -> None:
@@ -265,26 +289,21 @@ class WorkspaceEditApplicator:
             )
 
         # Check if new file exists
-        new_exists = await new_path.exists()
-
-        if new_exists:
-            if change.options and change.options.overwrite:
+        if await new_path.exists():
+            options = change.options
+            if options and options.overwrite:
                 # Overwrite is allowed, delete the target
                 await new_path.unlink()
-            elif change.options and change.options.ignore_if_exists:
+            elif options and options.ignore_if_exists:
                 # Ignore the rename operation
                 logger.debug(
-                    f"Skipping RenameFile {old_uri} -> {new_uri}: "
-                    "target exists and ignoreIfExists is true"
+                    f"Skipping RenameFile {old_uri} -> {new_uri}: target exists and ignoreIfExists is true"
                 )
                 return
             else:
                 # Default behavior: fail if target exists
                 raise EditApplicationError(
-                    message=(
-                        f"Target file {new_uri} already exists "
-                        "and overwrite is not allowed"
-                    ),
+                    message=f"Target file {new_uri} already exists and overwrite is not allowed",
                     uri=new_uri,
                 )
 
@@ -294,15 +313,15 @@ class WorkspaceEditApplicator:
             await parent.mkdir(parents=True, exist_ok=True)
 
         # Perform the rename
-        await old_path.rename(new_path)
+        _ = await old_path.rename(new_path)
         logger.debug(f"Renamed file: {old_uri} -> {new_uri}")
 
         # Update document state if tracked
         with suppress(KeyError):
-            content = self.client._document_state.get_content(old_uri)
-            version = self.client._document_state.get_version(old_uri)
-            self.client._document_state.unregister(old_uri)
-            self.client._document_state.register(new_uri, content, version=version)
+            content = self.client.document_state.get_content(old_uri)
+            version = self.client.document_state.get_version(old_uri)
+            self.client.document_state.unregister(old_uri)
+            self.client.document_state.register(new_uri, content, version=version)
 
     async def _apply_delete_file(self, change: lsp_type.DeleteFile) -> None:
         """Apply DeleteFile resource operation."""
@@ -310,14 +329,11 @@ class WorkspaceEditApplicator:
         path = anyio.Path(from_local_uri(uri))
 
         # Check if file exists
-        exists = await path.exists()
-
-        if not exists:
+        if not await path.exists():
             if change.options and change.options.ignore_if_not_exists:
                 # Ignore the delete operation
                 logger.debug(
-                    f"Skipping DeleteFile for {uri}: "
-                    "file does not exist and ignoreIfNotExists is true"
+                    f"Skipping DeleteFile for {uri}: file does not exist and ignoreIfNotExists is true"
                 )
                 return
             else:
@@ -328,12 +344,10 @@ class WorkspaceEditApplicator:
                 )
 
         # Handle directory or file
-        is_dir = await path.is_dir()
-
-        if is_dir:
+        if await path.is_dir():
             if change.options and change.options.recursive:
-                # Recursively delete directory (blocking operation)
-                shutil.rmtree(path)
+                # Recursively delete directory
+                await anyio.to_thread.run_sync(shutil.rmtree, str(path))
                 logger.debug(f"Deleted directory recursively: {uri}")
             else:
                 # Only delete empty directories
@@ -342,9 +356,7 @@ class WorkspaceEditApplicator:
                     logger.debug(f"Deleted empty directory: {uri}")
                 except OSError as e:
                     raise EditApplicationError(
-                        message=(
-                            f"Directory {uri} is not empty and recursive is not set"
-                        ),
+                        message=f"Directory {uri} is not empty and recursive is not set",
                         uri=uri,
                     ) from e
         else:
@@ -354,4 +366,4 @@ class WorkspaceEditApplicator:
 
         # Update document state if tracked
         with suppress(KeyError):
-            self.client._document_state.unregister(uri)
+            self.client.document_state.unregister(uri)

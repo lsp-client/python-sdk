@@ -87,12 +87,12 @@ class Client(
     request_timeout: float = 10.0
     """Timeout in seconds for JSON-RPC requests."""
 
-    initialization_options: dict = field(factory=dict)
+    initialization_options: dict[str, Any] = field(factory=dict)
     """Custom initialization options for the server."""
 
     _server: Server = field(init=False)
     _buffer: LSPFileBuffer = field(factory=LSPFileBuffer, init=False)
-    _document_state: DocumentStateManager = field(
+    document_state: DocumentStateManager = field(
         factory=DocumentStateManager, init=False
     )
     _config: ConfigurationMap = Factory(ConfigurationMap)
@@ -119,6 +119,8 @@ class Client(
                 yield defaults.local
             case Server() as server:
                 yield server
+            case _:
+                pass
 
         with suppress(ServerRuntimeError):
             await defaults.local.check_availability()
@@ -186,7 +188,7 @@ class Client(
         buffer_items = await self._buffer.open(file_uris)
         async with asyncer.create_task_group() as tg:
             for item in buffer_items:
-                self._document_state.register(item.file_uri, item.content, version=0)
+                self.document_state.register(item.file_uri, item.content, version=0)
                 tg.soonify(self.notify_text_document_opened)(
                     file_path=item.file_path,
                     file_content=item.content,
@@ -199,7 +201,7 @@ class Client(
 
             async with asyncer.create_task_group() as tg:
                 for item in closed_items:
-                    self._document_state.unregister(item.file_uri)
+                    self.document_state.unregister(item.file_uri)
                     tg.soonify(self.notify_text_document_closed)(item.file_path)
 
     async def write_file(self, uri: str, content: str) -> None:
@@ -232,7 +234,7 @@ class Client(
         in-memory representations in sync with the written content.
         """
         path = from_local_uri(uri)
-        await anyio.Path(path).write_text(content)
+        _ = await anyio.Path(path).write_text(content)
 
     @override
     async def request[R](

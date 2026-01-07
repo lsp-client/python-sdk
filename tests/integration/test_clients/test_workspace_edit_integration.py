@@ -22,7 +22,7 @@ class MockLSPClient(WithRespondApplyEdit):
     """Mock LSP client for integration testing."""
 
     def __init__(self, temp_dir: Path | None = None) -> None:
-        self._document_state = DocumentStateManager()
+        self.document_state = DocumentStateManager()
         self._files: dict[str, str] = {}
         self._temp_dir = temp_dir
         self.server = MagicMock()
@@ -85,7 +85,7 @@ async def test_apply_edit_request_success():
     """Test workspace/applyEdit request with successful application."""
     client = MockLSPClient()
     client._files["/test.py"] = "def hello():\n    pass\n"
-    client._document_state.register(
+    client.document_state.register(
         "file:///test.py", "def hello():\n    pass\n", version=0
     )
 
@@ -117,7 +117,7 @@ async def test_apply_edit_request_success():
     assert response.result.applied is True
     assert response.result.failure_reason is None
     assert client._files["/test.py"] == "def world():\n    pass\n"
-    assert client._document_state.get_version("file:///test.py") == 1
+    assert client.document_state.get_version("file:///test.py") == 1
 
 
 @pytest.mark.asyncio
@@ -125,7 +125,7 @@ async def test_apply_edit_request_version_mismatch():
     """Test workspace/applyEdit request with version mismatch."""
     client = MockLSPClient()
     client._files["/test.py"] = "def hello():\n    pass\n"
-    client._document_state.register(
+    client.document_state.register(
         "file:///test.py", "def hello():\n    pass\n", version=5
     )
 
@@ -200,9 +200,9 @@ async def test_apply_edit_increments_version():
     """Test that successful applyEdit increments document version."""
     client = MockLSPClient()
     client._files["/test.py"] = "line 1\nline 2\n"
-    client._document_state.register("file:///test.py", "line 1\nline 2\n", version=0)
+    client.document_state.register("file:///test.py", "line 1\nline 2\n", version=0)
 
-    assert client._document_state.get_version("file:///test.py") == 0
+    assert client.document_state.get_version("file:///test.py") == 0
 
     request = lsp_type.ApplyWorkspaceEditRequest(
         id="test-4",
@@ -231,8 +231,8 @@ async def test_apply_edit_increments_version():
     await client.respond_apply_edit(request)
 
     # Version should be incremented to 1
-    assert client._document_state.get_version("file:///test.py") == 1
-    assert client._document_state.get_content("file:///test.py") == "modified\nline 2\n"
+    assert client.document_state.get_version("file:///test.py") == 1
+    assert client.document_state.get_content("file:///test.py") == "modified\nline 2\n"
 
 
 @pytest.mark.asyncio
@@ -240,7 +240,7 @@ async def test_multiple_edits_sequential():
     """Test multiple sequential workspace edits with version tracking."""
     client = MockLSPClient()
     client._files["/test.py"] = "version 0\n"
-    client._document_state.register("file:///test.py", "version 0\n", version=0)
+    client.document_state.register("file:///test.py", "version 0\n", version=0)
 
     # First edit (version 0 -> 1)
     request1 = lsp_type.ApplyWorkspaceEditRequest(
@@ -269,8 +269,8 @@ async def test_multiple_edits_sequential():
 
     response1 = await client.respond_apply_edit(request1)
     assert response1.result.applied is True
-    assert client._document_state.get_version("file:///test.py") == 1
-    assert client._document_state.get_content("file:///test.py") == "version 1\n"
+    assert client.document_state.get_version("file:///test.py") == 1
+    assert client.document_state.get_content("file:///test.py") == "version 1\n"
 
     # Second edit (version 1 -> 2)
     request2 = lsp_type.ApplyWorkspaceEditRequest(
@@ -299,8 +299,8 @@ async def test_multiple_edits_sequential():
 
     response2 = await client.respond_apply_edit(request2)
     assert response2.result.applied is True
-    assert client._document_state.get_version("file:///test.py") == 2
-    assert client._document_state.get_content("file:///test.py") == "version 2\n"
+    assert client.document_state.get_version("file:///test.py") == 2
+    assert client.document_state.get_content("file:///test.py") == "version 2\n"
 
 
 @pytest.mark.asyncio
@@ -316,7 +316,7 @@ async def test_apply_edit_with_resource_operations():
 
         # Register in document state
         uri = test_file.as_uri()
-        client._document_state.register(uri, "original content\n", version=0)
+        client.document_state.register(uri, "original content\n", version=0)
 
         # Apply edit: text edit + rename + create
         new_file = temp_path / "renamed.py"
@@ -362,5 +362,5 @@ async def test_apply_edit_with_resource_operations():
 
         # Verify document state updated
         with pytest.raises(KeyError):
-            client._document_state.get_version(uri)
-        assert client._document_state.get_version(new_file.as_uri()) == 1
+            client.document_state.get_version(uri)
+        assert client.document_state.get_version(new_file.as_uri()) == 1

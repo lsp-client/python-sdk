@@ -16,7 +16,7 @@ class MockClient:
     """Mock client for testing workspace edit application."""
 
     def __init__(self, temp_dir: Path | None = None) -> None:
-        self._document_state = DocumentStateManager()
+        self.document_state = DocumentStateManager()
         self._files: dict[str, str] = {}
         self._temp_dir = temp_dir
 
@@ -157,7 +157,7 @@ async def test_workspace_edit_applicator_simple():
     """Test applying a simple workspace edit."""
     client = MockClient()
     client._files["/test.py"] = "print('hello')\n"
-    client._document_state.register("file:///test.py", "print('hello')\n", version=0)
+    client.document_state.register("file:///test.py", "print('hello')\n", version=0)
 
     applicator = WorkspaceEditApplicator(client=client)
     edit = lsp_type.WorkspaceEdit(
@@ -181,7 +181,7 @@ async def test_workspace_edit_applicator_simple():
 
     await applicator.apply_workspace_edit(edit)
     assert client._files["/test.py"] == "print('world')\n"
-    assert client._document_state.get_version("file:///test.py") == 1
+    assert client.document_state.get_version("file:///test.py") == 1
 
 
 @pytest.mark.asyncio
@@ -189,7 +189,7 @@ async def test_workspace_edit_applicator_version_mismatch():
     """Test that version mismatch raises exception."""
     client = MockClient()
     client._files["/test.py"] = "print('hello')\n"
-    client._document_state.register("file:///test.py", "print('hello')\n", version=5)
+    client.document_state.register("file:///test.py", "print('hello')\n", version=5)
 
     applicator = WorkspaceEditApplicator(client=client)
     edit = lsp_type.WorkspaceEdit(
@@ -385,7 +385,7 @@ async def test_rename_file():
 
 
 @pytest.mark.asyncio
-async def test_rename_file_with_document_state():
+async def test_rename_file_withdocument_state():
     """Test RenameFile updates document state."""
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -395,7 +395,7 @@ async def test_rename_file_with_document_state():
         old_file = temp_path / "old.txt"
         await anyio.Path(old_file).write_text("content")
         old_uri = old_file.as_uri()
-        client._document_state.register(old_uri, "content", version=5)
+        client.document_state.register(old_uri, "content", version=5)
 
         new_file = temp_path / "new.txt"
         new_uri = new_file.as_uri()
@@ -406,10 +406,10 @@ async def test_rename_file_with_document_state():
         await applicator.apply_workspace_edit(edit)
 
         with pytest.raises(KeyError):
-            client._document_state.get_version(old_uri)
+            client.document_state.get_version(old_uri)
 
-        assert client._document_state.get_version(new_uri) == 5
-        assert client._document_state.get_content(new_uri) == "content"
+        assert client.document_state.get_version(new_uri) == 5
+        assert client.document_state.get_content(new_uri) == "content"
 
 
 @pytest.mark.asyncio
@@ -432,7 +432,7 @@ async def test_delete_file():
 
 
 @pytest.mark.asyncio
-async def test_delete_file_with_document_state():
+async def test_delete_file_withdocument_state():
     """Test DeleteFile removes from document state."""
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -442,14 +442,14 @@ async def test_delete_file_with_document_state():
         file_to_delete = temp_path / "delete_me.txt"
         await anyio.Path(file_to_delete).write_text("content")
         uri = file_to_delete.as_uri()
-        client._document_state.register(uri, "content", version=3)
+        client.document_state.register(uri, "content", version=3)
 
         edit = lsp_type.WorkspaceEdit(document_changes=[lsp_type.DeleteFile(uri=uri)])
 
         await applicator.apply_workspace_edit(edit)
 
         with pytest.raises(KeyError):
-            client._document_state.get_version(uri)
+            client.document_state.get_version(uri)
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import anyio
 import pytest
 
 from lsp_client.clients.basedpyright import BasedpyrightClient
@@ -40,8 +41,6 @@ async def test_basedpyright_rename_multiple_files():
         # File 2: uses the function
         content2 = "from lib import my_global_func\nmy_global_func()\n"
         path2 = await interaction.create_file("main.py", content2)
-
-        import anyio
 
         await anyio.sleep(2)  # Wait for indexing
 

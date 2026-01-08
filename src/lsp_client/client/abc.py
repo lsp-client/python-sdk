@@ -192,7 +192,10 @@ class Client(
         buffer_items = await self._buffer.open(file_uris)
         async with asyncer.create_task_group() as tg:
             for item in buffer_items:
-                if item.file_uri not in self.document_state._states:
+                try:
+                    # Check if the document is already registered
+                    self.document_state.get_version(item.file_uri)
+                except KeyError:
                     self.document_state.register(item.file_uri, item.content, version=0)
                     tg.soonify(self.notify_text_document_opened)(
                         file_path=item.file_path,

@@ -5,7 +5,7 @@ import pytest
 from lsp_client.client.document_state import DocumentState, DocumentStateManager
 
 
-def testdocument_state_immutable():
+def test_document_state_immutable():
     state = DocumentState(content="hello", version=0)
     assert state.content == "hello"
     assert state.version == 0

@@ -389,7 +389,7 @@ async def test_rename_file():
 
 
 @pytest.mark.asyncio
-async def test_rename_file_withdocument_state():
+async def test_rename_file_with_document_state():
     """Test RenameFile updates document state."""
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -436,7 +436,7 @@ async def test_delete_file():
 
 
 @pytest.mark.asyncio
-async def test_delete_file_withdocument_state():
+async def test_delete_file_with_document_state():
     """Test DeleteFile removes from document state."""
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)

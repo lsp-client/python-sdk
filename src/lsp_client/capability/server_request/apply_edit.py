@@ -29,18 +29,13 @@ class WithRespondApplyEdit(
     """
     `workspace/applyEdit` - https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_applyEdit
 
-    This capability implements workspace edit application with text document edits
-    and version validation.
-
-    **Current Implementation (Phase 1):**
+    This capability implements workspace edit application with:
     - Text document edits with version validation
+    - Resource operations (`Create`, `Rename`, `Delete`)
     - Support for both `documentChanges` and deprecated `changes` format
 
-    **Advertised but Not Yet Implemented:**
-    Resource operations (Create, Rename, Delete) are advertised in the client
-    capabilities for forward compatibility, but will raise `EditApplicationError`
-    if requested by the server. Full support for these operations is planned for
-    Phase 3 of the version management implementation.
+    The advertised client capabilities accurately reflect the supported
+    workspace edit operations.
     """
 
     @override

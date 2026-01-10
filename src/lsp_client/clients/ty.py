@@ -59,12 +59,13 @@ async def ensure_ty_installed() -> None:
     try:
         await anyio.run_process([sys.executable, "-m", "pip", "install", "ty"])
         logger.info("Successfully installed ty via pip")
-        return
     except CalledProcessError as e:
         raise ServerInstallationError(
             "Could not install ty. Please install it manually with 'pip install ty' or 'uv tool install ty'. "
             "See https://docs.astral.sh/ty/installation/ for more information."
         ) from e
+    else:
+        return
 
 
 TyLocalServer = partial(

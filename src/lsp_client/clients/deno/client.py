@@ -76,13 +76,14 @@ async def ensure_deno_installed() -> None:
             ["sh", "-c", "curl -fsSL https://deno.land/install.sh | sh"]
         )
         logger.info("Successfully installed deno via shell script")
-        return
     except CalledProcessError as e:
         raise ServerInstallationError(
             "Could not install deno. Please install it manually with:\n"
             "curl -fsSL https://deno.land/install.sh | sh\n\n"
             "See https://deno.land/ for more information."
         ) from e
+    else:
+        return
 
 
 DenoLocalServer = partial(

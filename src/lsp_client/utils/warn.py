@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import functools
 import warnings
+from collections.abc import Callable
 
 
-def deprecated(reason: str):
-    def decorator(func):
+def deprecated[**P, R](reason: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            name = getattr(func, "__name__", "function")
             warnings.warn(
-                f"{func.__name__} deprecated: {reason}",
+                f"{name} deprecated: {reason}",
                 DeprecationWarning,
                 stacklevel=2,
             )

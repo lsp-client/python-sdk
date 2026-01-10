@@ -15,7 +15,7 @@ class ServerError(LSPError):
 class ServerRuntimeError(ServerError):
     """Raised when a server fails to start or crashes during execution."""
 
-    def __init__(self, server: Server, *args: object):
+    def __init__(self, server: Server, *args: object) -> None:
         super().__init__(*args)
         self.server = server
 

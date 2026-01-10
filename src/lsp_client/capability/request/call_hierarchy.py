@@ -128,6 +128,7 @@ class WithRequestCallHierarchy(
 
             if calls:
                 return calls
+        return None
 
     async def request_call_hierarchy_outgoing_call(
         self, file_path: AnyPath, position: Position
@@ -164,3 +165,4 @@ class WithRequestCallHierarchy(
 
             if calls:
                 return calls
+        return None

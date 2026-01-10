@@ -65,12 +65,13 @@ async def ensure_pyright_installed() -> None:
     try:
         await anyio.run_process(["npm", "install", "-g", "pyright"])
         logger.info("Successfully installed pyright-langserver via npm")
-        return
     except CalledProcessError as e:
         raise ServerInstallationError(
             "Could not install pyright-langserver. Please install it manually with 'npm install -g pyright'. "
             "See https://microsoft.github.io/pyright/ for more information."
         ) from e
+    else:
+        return
 
 
 PyrightLocalServer = partial(

@@ -120,6 +120,7 @@ class WithRequestTypeHierarchy(
 
             if items:
                 return items
+        return None
 
     async def request_type_hierarchy_subtypes(
         self, file_path: AnyPath, position: Position
@@ -151,3 +152,4 @@ class WithRequestTypeHierarchy(
 
             if items:
                 return items
+        return None

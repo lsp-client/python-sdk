@@ -316,12 +316,11 @@ class WorkspaceEditApplicator:
                     f"Skipping DeleteFile for {uri}: file does not exist and ignoreIfNotExists is true"
                 )
                 return
-            else:
-                # Default behavior: fail if file doesn't exist
-                raise EditApplicationError(
-                    message=f"File {uri} does not exist",
-                    uri=uri,
-                )
+            # Default behavior: fail if file doesn't exist
+            raise EditApplicationError(
+                message=f"File {uri} does not exist",
+                uri=uri,
+            )
 
         # Handle directory or file
         if await path.is_dir():

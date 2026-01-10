@@ -33,14 +33,13 @@ def _(
 
     if object_ is None:
         return None
-    elif isinstance(object_, str):
+    if isinstance(object_, str):
         return str(object_)
-    elif "notebookType" in object_:
+    if "notebookType" in object_:
         return converter.structure(object_, lsp_type.NotebookDocumentFilterNotebookType)
-    elif "scheme" in object_:
+    if "scheme" in object_:
         return converter.structure(object_, lsp_type.NotebookDocumentFilterScheme)
-    else:
-        return converter.structure(object_, lsp_type.NotebookDocumentFilterPattern)
+    return converter.structure(object_, lsp_type.NotebookDocumentFilterPattern)
 
 
 def value_deserialize[R](raw_value: Any, schema: type[R]) -> R:
@@ -77,8 +76,7 @@ def response_deserialize[R](
             err_resp = converter.structure(raw_err_resp, lsp_type.ResponseErrorMessage)
             if err := err_resp.error:
                 raise JsonRpcResponseError(err.code, err.message, err.data)
-            else:
-                raise JsonRpcParseError(f"Invalid Error Response: {err_resp}")
+            raise JsonRpcParseError(f"Invalid Error Response: {err_resp}")
         case {"result": _} as raw_resp:
             resp = converter.structure(raw_resp, schema)
             return resp.result

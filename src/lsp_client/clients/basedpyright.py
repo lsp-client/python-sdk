@@ -72,9 +72,10 @@ async def ensure_basedpyright_installed() -> None:
             try:
                 logger.info("Attempting to install basedpyright via {}...", name)
                 await anyio.run_process(cmd)
-                return
             except CalledProcessError:
                 continue
+            else:
+                return
 
     raise ServerInstallationError(
         "Could not install basedpyright. Please install it manually with 'uv tool install basedpyright', 'npm install -g basedpyright' or 'pip install basedpyright'."

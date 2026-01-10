@@ -32,14 +32,15 @@ class LanguageConfig:
     def _find_project_root(self, dir_path: Path) -> Path | None:
         for project_path in (dir_path, *dir_path.parents):
             if any((project_path / excl).exists() for excl in self.exclude_files):
-                return
+                return None
             if any((project_path / proj).exists() for proj in self.project_files):
                 return project_path
+        return None
 
     def find_project_root(self, path: Path) -> Path | None:
         if path.is_file():
             if not any(path.name.endswith(suffix) for suffix in self.suffixes):
-                return
+                return None
             path = path.parent
 
         return self._find_project_root(path)

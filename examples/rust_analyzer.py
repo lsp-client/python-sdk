@@ -14,7 +14,7 @@ from lsp_client.clients.rust_analyzer import RustAnalyzerClient
 lsp_client.enable_logging()
 
 
-async def main():
+async def main() -> None:
     # Initialize Rust Analyzer client with local server
     async with RustAnalyzerClient() as client:
         # Get and display the language ID for this client

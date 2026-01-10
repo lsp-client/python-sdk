@@ -56,12 +56,13 @@ async def ensure_gopls_installed() -> None:
     try:
         await anyio.run_process(["go", "install", "golang.org/x/tools/gopls@latest"])
         logger.info("Successfully installed gopls via go install")
-        return
     except CalledProcessError as e:
         raise ServerInstallationError(
             "Could not install gopls. Please install it manually with 'go install golang.org/x/tools/gopls@latest'. "
             "See https://github.com/golang/tools/tree/master/gopls for more information."
         ) from e
+    else:
+        return
 
 
 GoplsLocalServer = partial(

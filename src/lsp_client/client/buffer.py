@@ -82,7 +82,7 @@ class LSPFileBuffer:
 
         items: list[LSPFileBufferItem] = []
 
-        async def append_item(uri: str):
+        async def append_item(uri: str) -> None:
             text = await anyio.Path(from_local_uri(uri)).read_bytes()
             items.append(LSPFileBufferItem(file_uri=uri, file_content=text))
 

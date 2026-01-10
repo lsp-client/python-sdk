@@ -152,10 +152,11 @@ class StreamServer(Server):
         try:
             package = await read_raw_package(self._buffered_receive_stream)
             logger.debug("Received package: {}", package)
-            return package
         except (anyio.EndOfStream, anyio.IncompleteRead, anyio.ClosedResourceError):
             logger.debug("Stream closed")
             return None
+        else:
+            return package
 
     async def _handle_package(
         self, sender: Sender[ServerRequest], package: RawPackage

@@ -40,46 +40,6 @@ dev = [
 requires = ["uv_build>=0.9.9,<0.10.0"]
 build-backend = "uv_build"
 
-[tool.ruff]
-target-version = "py312"
-extend-exclude = ["references", "scripts/references"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-
-# from https://github.com/astral-sh/ruff/blob/c1fed55d51b34e1235f72c610fe4b1700ed76451/pyproject.toml
-[tool.ruff.lint]
-select = [
-    "E",   # pycodestyle (error)
-    "F",   # pyflakes
-    "B",   # bugbear
-    "B9",
-    "C4",  # flake8-comprehensions
-    "SIM", # flake8-simplify
-    "I",   # isort
-    "UP",  # pyupgrade
-    "PIE", # flake8-pie
-    "PGH", # pygrep-hooks
-    "PYI", # flake8-pyi
-    "RUF",
-]
-
-ignore = [
-    # only relevant if you run a script with `python -0`,
-    # which seems unlikely for any of the scripts in this repo
-    "B011",
-    # Leave it to the formatter to split long lines and
-    # the judgement of all of us.
-    "E501",
-]
-
-[tool.ruff.lint.isort]
-required-imports = ["from __future__ import annotations"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/fixtures/**/*.py" = ["F821"]
-
 [tool.pytest.ini_options]
 # Register custom markers
 markers = [

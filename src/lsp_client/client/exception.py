@@ -15,6 +15,6 @@ class ClientError(LSPError):
 class ClientRuntimeError(ClientError):
     """Raised when a client encounters a runtime error."""
 
-    def __init__(self, client: Client, *args: object):
+    def __init__(self, client: Client, *args: object) -> None:
         super().__init__(*args)
         self.client = client

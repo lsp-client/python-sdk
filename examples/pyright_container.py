@@ -14,7 +14,7 @@ from lsp_client import Position
 from lsp_client.clients.pyright import PyrightClient, PyrightContainerServer
 
 
-async def main():
+async def main() -> None:
     # Set up workspace directory and mount it in Docker
     workspace = Path.cwd()
     async with PyrightClient(

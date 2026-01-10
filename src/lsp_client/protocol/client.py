@@ -100,11 +100,11 @@ class CapabilityClientProtocol(DocumentEditProtocol, Protocol):
         if len(self.get_workspace()) == 1:  # single root workspace
             folder = self.get_workspace()[DEFAULT_WORKSPACE_DIR]
             return (folder.path / file_path).as_uri()
-        else:  # multi-root workspace
-            if (root := file_path.parts[0]) not in self.get_workspace():
-                raise ValueError(f"{root} is not a valid workspace folder")
-            folder = self.get_workspace()[root]
-            return (folder.path / Path(*file_path.parts[1:])).as_uri()
+        # multi-root workspace
+        if (root := file_path.parts[0]) not in self.get_workspace():
+            raise ValueError(f"{root} is not a valid workspace folder")
+        folder = self.get_workspace()[root]
+        return (folder.path / Path(*file_path.parts[1:])).as_uri()
 
     def from_uri(self, uri: str, *, relative: bool = True) -> Path:
         """

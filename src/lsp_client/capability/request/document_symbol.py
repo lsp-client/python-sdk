@@ -90,6 +90,7 @@ class WithRequestDocumentSymbol(
                 logger.warning(
                     "Document symbol returned with unexpected result: {}", other
                 )
+        return None
 
     async def request_document_symbol_list(
         self, file_path: AnyPath

@@ -1,0 +1,50 @@
+target-version = "py312"
+line-length = 88
+extend-exclude = ["references", "scripts/references"]
+
+[lint]
+select = [
+    "E", "W",          # Basic pycodestyle styling (non-disruptive)
+    "F",               # Pyflakes — actual logic errors (must-have)
+    "I",               # isort — consistent import ordering
+    "B", "B9",         # flake8-bugbear — common mistakes and gotchas
+    "UP",              # pyupgrade — modern syntax where possible
+    "SIM",             # flake8-simplify — simpler logic constructs
+    "PIE",             # flake8-pie — code improvements
+    "C4",              # flake8-comprehensions — better comprehensions
+    "RET",             # flake8-return — consistent return statements
+    "BLE",             # blind except — avoid 'except:' without type
+    "TRY",             # tryceratops — clean exception handling
+    "RSE",             # raise — ensure proper raise statements
+    "ANN",             # flake8-annotations — enforce type hints
+    "PGH",             # pygrep-hooks — PGH003: no blanket type: ignore
+    "PTH",             # pathlib — prefer pathlib over os.path
+    "PERF",            # perflint — performance anti-patterns
+    "PYI",             # flake8-pyi
+    "RUF",             # Ruff-specific rules
+]
+
+ignore = [
+    "B011",    # only relevant if you run a script with `python -O`
+    "E501",    # Line length (handled by formatter)
+    "COM812",  # Trailing comma (conflicts with formatter)
+    "ISC001",  # Implicit string concatenation (conflicts with formatter)
+    "PLR0913", # Too many arguments - sometimes necessary
+    "PLR2004", # Magic value comparison - sometimes reasonable
+    "TRY003",  # Long exception message - custom error messages are common
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
+]
+
+[lint.isort]
+required-imports = ["from __future__ import annotations"]
+known-first-party = ["lsp_client"]
+
+[lint.per-file-ignores]
+"tests/fixtures/**/*.py" = ["F821"]
+"tests/**/*.py" = [
+    "ANN", "SIM", "PIE", "C4", "RET", "BLE", "TRY", "RSE", "PERF",
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"

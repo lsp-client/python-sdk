@@ -64,12 +64,13 @@ async def ensure_typescript_installed() -> None:
             ["npm", "install", "-g", "typescript-language-server", "typescript"]
         )
         logger.info("Successfully installed typescript-language-server via npm")
-        return
     except CalledProcessError as e:
         raise ServerInstallationError(
             "Could not install typescript-language-server and typescript. Please install them manually with 'npm install -g typescript-language-server typescript'. "
             "See https://github.com/typescript-language-server/typescript-language-server for more information."
         ) from e
+    else:
+        return
 
 
 TypescriptLocalServer = partial(

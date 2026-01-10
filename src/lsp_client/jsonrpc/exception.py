@@ -18,7 +18,7 @@ class JsonRpcTransportError(JsonRpcError):
 class JsonRpcResponseError(JsonRpcError):
     """Raised when the JSON-RPC response indicates an error."""
 
-    def __init__(self, code: int, message: str, data: object = None):
+    def __init__(self, code: int, message: str, data: object = None) -> None:
         super().__init__(f"JSON-RPC Error {code}: {message}")
         self.code = code
         self.message = message

@@ -60,7 +60,7 @@ class WithRespondConfigurationRequest(
         """
 
         if not (config := self.get_config_map()):
-            return
+            return None
         return config.get(scope_uri, section)
 
     async def _respond_configuration(

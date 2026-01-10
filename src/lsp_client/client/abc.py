@@ -305,7 +305,7 @@ class Client(
             lsp_type.InitializedNotification(params=lsp_type.InitializedParams())
         )
 
-    async def _shutdown(self):
+    async def _shutdown(self) -> None:
         """
         `shutdown` - https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#shutdown
         """

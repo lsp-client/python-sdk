@@ -106,3 +106,4 @@ class WithDocumentDiagnostic(
                     "Unsupported diagnostic report type for file {}",
                     file_path,
                 )
+        return None

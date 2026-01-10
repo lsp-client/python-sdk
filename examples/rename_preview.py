@@ -15,7 +15,7 @@ from lsprotocol.types import Position, SnippetTextEdit, TextDocumentEdit
 from lsp_client.clients import PyrightClient
 
 
-async def preview_rename_example():
+async def preview_rename_example() -> None:
     """Show how to preview rename changes before applying."""
     workspace = Path.cwd()
 
@@ -74,13 +74,13 @@ async def preview_rename_example():
             try:
                 await client.apply_workspace_edit(edits)
                 print("✓ Rename completed successfully")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print(f"✗ Rename failed: {e}")
         else:
             print("Rename cancelled")
 
 
-async def direct_rename_example():
+async def direct_rename_example() -> None:
     """Show how to apply rename directly without preview."""
     workspace = Path.cwd()
 
@@ -101,7 +101,7 @@ async def direct_rename_example():
                 print("✓ Rename completed successfully")
             else:
                 print("✗ Rename not possible at this position")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"✗ Rename failed: {e}")
 
 

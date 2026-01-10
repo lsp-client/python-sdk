@@ -39,9 +39,26 @@ class LspInteraction[C: Client]:
         return (self.workspace_root / relative_path).resolve()
 
     async def create_file(self, relative_path: str, content: str) -> Path:
+        import anyio
+
+        from lsp_client.capability.notification.did_create_files import (
+            WithNotifyDidCreateFiles,
+        )
+
         path = self.full_path(relative_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
+
+        # Notify LSP server about the file creation
+        if isinstance(self.client, WithNotifyDidCreateFiles):
+            uri = self.client.as_uri(path)
+            await self.client.notify_did_create_files([uri])
+            # Give server time to process the notification
+            await anyio.sleep(0.1)
+        else:
+            # For servers without didCreateFiles support, wait for file watching
+            await anyio.sleep(0.2)
+
         return path
 
     async def request_definition(
